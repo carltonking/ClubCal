@@ -11,7 +11,6 @@ const Dom = {
   tabButtons: [...document.querySelectorAll(".tab-btn")],
   tabPanels: [...document.querySelectorAll(".tab-panel")],
   navToggle: document.getElementById("nav-toggle"),
-  themeToggle: document.getElementById("theme-toggle"),
   navLinks: document.getElementById("nav-links"),
   navDashboardLink: document.getElementById("nav-dashboard-link"),
   navSignupLinks: [...document.querySelectorAll('#nav-links [data-route="signup"]')],
@@ -88,27 +87,6 @@ const App = {
   bindTabs() {
     Dom.tabButtons.forEach((button) => {
       button.addEventListener("click", () => UI.setTab(button.dataset.tab));
-    });
-  },
-
-  initTheme() {
-    const saved = localStorage.getItem("clubcal_theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (saved === "dark" || (!saved && prefersDark)) {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
-  },
-
-  bindThemeToggle() {
-    Dom.themeToggle.addEventListener("click", () => {
-      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      if (isDark) {
-        document.documentElement.removeAttribute("data-theme");
-        localStorage.setItem("clubcal_theme", "light");
-      } else {
-        document.documentElement.setAttribute("data-theme", "dark");
-        localStorage.setItem("clubcal_theme", "dark");
-      }
     });
   },
 
@@ -210,13 +188,11 @@ const App = {
   },
 
   async init() {
-    this.initTheme();
     configureUI({ Dom });
     configureActions({ Dom });
     configureRouter({ Dom, UI });
 
     this.bindRouteTriggers();
-    this.bindThemeToggle();
     this.bindTabs();
     this.bindNavigation();
     this.bindSearchInputs();
