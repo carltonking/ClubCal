@@ -35,6 +35,8 @@ const Dom = {
   calendarsList: document.getElementById("calendars-list"),
   eventCalendarSelect: document.getElementById("event-calendar"),
   eventForm: document.getElementById("event-form"),
+  eventSubmitBtn: document.getElementById("create-event-submit"),
+  cancelEditBtn: document.getElementById("cancel-edit-btn"),
   settingsForm: document.getElementById("settings-form"),
   settingsReadView: document.getElementById("settings-read-view"),
   settingsEditBtn: document.getElementById("settings-edit-btn"),
@@ -169,6 +171,8 @@ const App = {
   bindSettingsActions() {
     Dom.settingsEditBtn.addEventListener("click", () => Actions.startSettingsEdit());
     Dom.settingsCancelBtn.addEventListener("click", () => Actions.cancelSettingsEdit());
+
+    Dom.cancelEditBtn.addEventListener("click", () => UI.clearEditMode());
 
     Dom.signoutBtn.addEventListener("click", () => Actions.handleSignOut());
     Dom.navLogoutBtn.addEventListener("click", () => Actions.handleSignOut());

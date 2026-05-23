@@ -56,10 +56,43 @@ export async function createEvent(payload) {
   return mapEvent(data);
 }
 
-export async function deleteEvent(eventId) {
-  const { error } = await supabase.from("events").delete().eq("id", eventId);
+export async function updateEvent(eventId, payload) {
+  const { data, error } = await supabase.rpc("update_event", {
+    event_id: eventId,
+    p_title: payload.title,
+    p_date: payload.date,
+    p_start_time: payload.startTime,
+    p_end_time: payload.endTime,
+    p_address: payload.address,
+    p_room: payload.room || null,
+    p_attire: payload.attire || null,
+    p_category: payload.category,
+    p_description: payload.description || null,
+    p_rsvp_url: payload.rsvp || null,
+    p_calendar_id: payload.calendarId || null
+  });
 
   if (error) throw error;
+  return mapEvent(data);
+}
+
+export async function deleteEvent(eventId) {
+  // Soft-delete: mark as cancelled so iCal feed publishes STATUS:CANCELLED
+  const { error } = await supabase
+    .rpc("cancel_event", { event_id: eventId });
+
+  if (error) throw error;
+}
+
+export async function fetchEvent(eventId) {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", eventId)
+    .single();
+
+  if (error) throw error;
+  return mapEvent(data);
 }
 
 export async function updateEventDownloadCount(eventItem) {

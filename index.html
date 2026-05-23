@@ -425,6 +425,8 @@
 
       .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
+      .event-form-actions { display: flex; gap: 10px; margin-top: 6px; }
+
       .split-view, .dashboard-layout { display: grid; gap: 28px; }
 
       .split-view {
@@ -1234,7 +1236,10 @@
                       <input id="event-rsvp" name="rsvp" type="url" placeholder="https://" />
                       <div class="error" data-error-for="rsvp"></div>
                     </div>
-                    <button class="btn btn-primary" type="submit" id="create-event-submit">Publish Event</button>
+                    <div class="event-form-actions">
+                      <button class="btn btn-primary" type="submit" id="create-event-submit">Publish Event</button>
+                      <button class="btn btn-ghost" type="button" id="cancel-edit-btn" hidden>Cancel Editing</button>
+                    </div>
                   </form>
 
                   <aside class="preview-card">
@@ -1460,7 +1465,7 @@
           <nav class="footer-links" aria-label="Footer">
             <a class="footer-link" href="#" data-route="signup">For Clubs</a>
             <a class="footer-link" href="#" data-route="discovery">Find Events</a>
-            <a class="footer-link" href="mailto:hello@clubcal.app">Contact</a>
+            <a class="footer-link" href="mailto:cik2018@nyu.edu">Contact</a>
           </nav>
         </div>
       </footer>

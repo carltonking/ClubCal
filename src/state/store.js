@@ -14,7 +14,8 @@ export const store = {
     authSession: null,
     dashboardEvents: [],
     dashboardCalendars: [],
-    dashboardStatus: ""
+    dashboardStatus: "",
+    editingEventId: null
   },
 
   setView(view) {
@@ -61,5 +62,13 @@ export const store = {
 
   setDashboardCalendars(calendars) {
     this.state.dashboardCalendars = calendars;
+  },
+
+  setEditingEvent(eventId) {
+    this.state.editingEventId = eventId;
+  },
+
+  clearEditingEvent() {
+    this.state.editingEventId = null;
   }
 };

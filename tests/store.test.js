@@ -21,6 +21,7 @@ describe("store", () => {
     expect(store.state.dashboardEvents).toEqual([]);
     expect(store.state.dashboardCalendars).toEqual([]);
     expect(store.state.dashboardStatus).toBe("");
+    expect(store.state.editingEventId).toBeNull();
   });
 
   describe("setView", () => {
@@ -128,6 +129,19 @@ describe("store", () => {
       const calendars = [{ id: "cal1", name: "E-Board" }];
       store.setDashboardCalendars(calendars);
       expect(store.state.dashboardCalendars).toEqual(calendars);
+    });
+  });
+
+  describe("editingEventId", () => {
+    it("setEditingEvent updates editingEventId", () => {
+      store.setEditingEvent("evt-1");
+      expect(store.state.editingEventId).toBe("evt-1");
+    });
+
+    it("clearEditingEvent resets editingEventId to null", () => {
+      store.setEditingEvent("evt-1");
+      store.clearEditingEvent();
+      expect(store.state.editingEventId).toBeNull();
     });
   });
 });

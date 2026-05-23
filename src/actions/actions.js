@@ -1,5 +1,5 @@
 import { signUpClub, signInClub, signOutClub, updateClubProfile } from "../services/authService.js";
-import { createEvent } from "../services/eventService.js";
+import { createEvent, updateEvent } from "../services/eventService.js";
 import { createCalendar } from "../services/calendarService.js";
 import { clearErrors, setError } from "../utils/helpers.js";
 import { store } from "../state/store.js";
@@ -131,15 +131,22 @@ export const Actions = {
     if (!valid) return;
 
     try {
-      const newEvent = await createEvent(payload);
-      UI.showToast("Event published", `${newEvent.title} was saved to your club calendar.`);
-      Dom.eventForm.reset();
-      UI.updatePreview();
+      const editingId = store.state.editingEventId;
+      if (editingId) {
+        const updatedEvent = await updateEvent(editingId, payload);
+        UI.showToast("Event updated", `${updatedEvent.title} was saved.`);
+        UI.clearEditMode();
+      } else {
+        const newEvent = await createEvent(payload);
+        UI.showToast("Event published", `${newEvent.title} was saved to your club calendar.`);
+        Dom.eventForm.reset();
+        UI.updatePreview();
+      }
       await UI.renderEvents();
       UI.renderInsights();
       UI.setTab("events");
     } catch (error) {
-      UI.showToast("Event creation failed", error.message);
+      UI.showToast(store.state.editingEventId ? "Event update failed" : "Event creation failed", error.message);
     }
   },
 

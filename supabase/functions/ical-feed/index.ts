@@ -31,6 +31,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
+// RFC 5545 line folding: each line must not exceed 75 octets.
+// Continuation lines start with a single space.
+function foldLine(value: string): string {
+  const maxLen = 75;
+  if (value.length <= maxLen) return value;
+
+  const lines: string[] = [];
+  let remaining = value;
+  while (remaining.length > 0) {
+    if (lines.length === 0) {
+      lines.push(remaining.substring(0, maxLen));
+      remaining = remaining.substring(maxLen);
+    } else {
+      // continuation: leave 1 char for the leading space
+      const chunk = remaining.substring(0, maxLen - 1);
+      lines.push(" " + chunk);
+      remaining = remaining.substring(maxLen - 1);
+    }
+  }
+  return lines.join("\r\n");
+}
+
 function escapeICS(value: string | null | undefined) {
   return String(value || "")
     .replace(/\\/g, "\\\\")
@@ -71,7 +93,7 @@ function buildEventBlock(eventItem: EventRow, clubName: string) {
   const dtstamp = fmtUtcTimestamp(new Date().toISOString()); // RFC 5545 requires DTSTAMP
   const sequence = Number.isFinite(eventItem.sequence) ? Number(eventItem.sequence) : 0;
 
-  return [
+  const lines = [
     "BEGIN:VEVENT",
     `UID:${escapeICS(`${eventItem.id}@clubcal.app`)}`,
     `DTSTAMP:${dtstamp}`,
@@ -84,7 +106,9 @@ function buildEventBlock(eventItem: EventRow, clubName: string) {
     `DESCRIPTION:${description}`,
     `STATUS:${eventItem.cancelled ? "CANCELLED" : "CONFIRMED"}`,
     "END:VEVENT"
-  ].join("\r\n");
+  ];
+
+  return lines.map((line) => foldLine(line)).join("\r\n");
 }
 
 Deno.serve(async (request) => {
@@ -164,20 +188,24 @@ Deno.serve(async (request) => {
     });
   }
 
-  const calendarBody = [
+  const headerLines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Club Cal//Club Calendar Feed//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+    "X-PUBLISHED-TTL:PT1H",
     `X-WR-CALNAME:${escapeICS(calendarName)}`,
-    `X-WR-CALDESC:${escapeICS(`Club Cal feed for ${calendarName}`)}`,
-    ...((events || []) as EventRow[])
-      .filter((eventItem) => shouldKeepInFeed(eventItem))
-      .sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`))
-      .map((eventItem) => buildEventBlock(eventItem, calendarName)),
-    "END:VCALENDAR"
-  ].join("\r\n");
+    `X-WR-CALDESC:${escapeICS(`Club Cal feed for ${calendarName}`)}`
+  ];
+
+  const eventBlocks = ((events || []) as EventRow[])
+    .filter((eventItem) => shouldKeepInFeed(eventItem))
+    .sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`))
+    .map((eventItem) => buildEventBlock(eventItem, calendarName));
+
+  const allLines = [...headerLines, ...eventBlocks, "END:VCALENDAR"];
+  const calendarBody = allLines.map((line) => foldLine(line)).join("\r\n");
 
   return new Response(calendarBody, {
     status: 200,

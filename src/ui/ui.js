@@ -4,7 +4,8 @@ import {
   fetchDiscoverySchools,
   fetchActiveClubsBySchool,
   deleteEvent,
-  updateEventDownloadCount
+  updateEventDownloadCount,
+  fetchEvent
 } from "../services/eventService.js";
 import { fetchCalendarsForClub } from "../services/calendarService.js";
 import { isSupabaseConfigured } from "../services/supabaseClient.js";
@@ -86,6 +87,31 @@ export const UI = {
     Dom.settingsEditBtn.hidden = editing;
   },
 
+  populateEventForm(eventItem) {
+    Dom.eventForm.querySelector('[name="title"]').value = eventItem.title;
+    Dom.eventForm.querySelector('[name="date"]').value = eventItem.date;
+    Dom.eventForm.querySelector('[name="startTime"]').value = (eventItem.start_time || "").replace(":", "");
+    Dom.eventForm.querySelector('[name="endTime"]').value = (eventItem.end_time || "").replace(":", "");
+    Dom.eventForm.querySelector('[name="address"]').value = eventItem.address || "";
+    Dom.eventForm.querySelector('[name="room"]').value = eventItem.room || "";
+    Dom.eventForm.querySelector('[name="attire"]').value = eventItem.attire || "";
+    Dom.eventForm.querySelector('[name="category"]').value = eventItem.category || "";
+    Dom.eventForm.querySelector('[name="calendarId"]').value = eventItem.calendar_id || "";
+    Dom.eventForm.querySelector('[name="description"]').value = eventItem.description || "";
+    Dom.eventForm.querySelector('[name="rsvp"]').value = eventItem.rsvp_url || "";
+    if (Dom.eventSubmitBtn) Dom.eventSubmitBtn.textContent = "Update Event";
+    if (Dom.cancelEditBtn) Dom.cancelEditBtn.hidden = false;
+    this.updatePreview();
+  },
+
+  clearEditMode() {
+    store.clearEditingEvent();
+    Dom.eventForm.reset();
+    if (Dom.eventSubmitBtn) Dom.eventSubmitBtn.textContent = "Publish Event";
+    if (Dom.cancelEditBtn) Dom.cancelEditBtn.hidden = true;
+    this.updatePreview();
+  },
+
   updatePreview() {
     const formData = new FormData(Dom.eventForm);
     const title = formData.get("title") || "Your event title";
@@ -162,6 +188,7 @@ export const UI = {
           <div>
             <h3 class="event-heading">${escapeHTML(eventItem.title)}</h3>
             <div class="badge ${categoryClass(eventItem.category)}">${escapeHTML(eventItem.category)}</div>
+            ${eventItem.cancelled ? `<div class="badge stale">Cancelled</div>` : ""}
           </div>
         </div>
         <div class="event-meta">
@@ -171,6 +198,7 @@ export const UI = {
         </div>
         <div class="event-actions">
           <button class="btn btn-secondary btn-small js-download-event" data-id="${eventItem.id}">Download .ics</button>
+          <button class="btn btn-ghost btn-small js-edit-event" data-id="${eventItem.id}" ${eventItem.cancelled ? "disabled" : ""}>Edit</button>
           <button class="btn btn-danger btn-small js-delete-event" data-id="${eventItem.id}">Delete</button>
         </div>
       </article>
@@ -204,6 +232,20 @@ export const UI = {
           this.showToast("Event deleted", "The event was removed from your dashboard.");
         } catch (error) {
           this.showToast("Delete failed", error.message);
+        }
+      });
+    });
+
+    Dom.eventsList.querySelectorAll(".js-edit-event").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          const eventItem = store.state.dashboardEvents.find((item) => String(item.id) === button.dataset.id);
+          if (!eventItem) return;
+          await this.populateEventForm(eventItem);
+          store.setEditingEvent(eventItem.id);
+          this.setTab("create");
+        } catch (error) {
+          this.showToast("Edit failed", error.message);
         }
       });
     });
