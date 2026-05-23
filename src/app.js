@@ -150,7 +150,9 @@ const App = {
       const button = event.target.closest("[data-filter]");
       if (!button) return;
       store.setFilter(button.dataset.filter);
-      [...Dom.filterBar.querySelectorAll("[data-filter]")].forEach((chip) => chip.classList.toggle("active", chip === button));
+      [...Dom.filterBar.querySelectorAll("[data-filter]")].forEach((chip) =>
+        chip.classList.toggle("active", chip === button)
+      );
       UI.renderClubGrid();
     });
 

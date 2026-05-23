@@ -1,13 +1,36 @@
 import { fetchPendingClubs, approveClub, rejectClub } from "../services/authService.js";
-import { fetchEventsForClub, fetchDiscoverySchools, fetchActiveClubsBySchool, deleteEvent, updateEventDownloadCount } from "../services/eventService.js";
+import {
+  fetchEventsForClub,
+  fetchDiscoverySchools,
+  fetchActiveClubsBySchool,
+  deleteEvent,
+  updateEventDownloadCount
+} from "../services/eventService.js";
 import { fetchCalendarsForClub } from "../services/calendarService.js";
 import { isSupabaseConfigured } from "../services/supabaseClient.js";
-import { escapeHTML, formatTimestamp, formatTimeRange, categoryClass, mapClub, mapEvent, getClubFeedUrl, getClubFeedWebcalUrl, getCalendarFeedUrl, getCalendarFeedWebcalUrl, toWebcalUrl } from "../utils/helpers.js";
+import {
+  escapeHTML,
+  formatTimestamp,
+  formatTimeRange,
+  categoryClass,
+  mapClub,
+  mapEvent,
+  getClubFeedUrl,
+  getClubFeedWebcalUrl,
+  getCalendarFeedUrl,
+  getCalendarFeedWebcalUrl,
+  toWebcalUrl
+} from "../utils/helpers.js";
 import { downloadICS } from "../utils/ics.js";
-import { store, STORAGE_KEYS } from "../state/store.js";
+import { store } from "../state/store.js";
 import { showView } from "../router/router.js";
 
-const ADMIN_PASSWORD = "clubcal-admin";
+// Admin access is verified server-side by the `admin-club-action` edge
+// function against its ADMIN_SECRET env var. The client stores whatever
+// the admin typed in sessionStorage under `clubcal.adminToken` and sends
+// it with each admin action. A wrong token causes the edge function to
+// return 401, which we surface as a toast.
+const ADMIN_TOKEN_KEY = "clubcal.adminToken";
 
 let Dom;
 
@@ -66,7 +89,8 @@ export const UI = {
   updatePreview() {
     const formData = new FormData(Dom.eventForm);
     const title = formData.get("title") || "Your event title";
-    const description = formData.get("description") || "Add an optional description to give students the context they need.";
+    const description =
+      formData.get("description") || "Add an optional description to give students the context they need.";
     const date = formData.get("date");
     const startTime = formData.get("startTime");
     const endTime = formData.get("endTime");
@@ -79,7 +103,8 @@ export const UI = {
     Dom.preview.title.textContent = title;
     Dom.preview.description.textContent = description;
     Dom.preview.datetime.textContent = formatTimeRange(date, startTime, endTime);
-    Dom.preview.location.textContent = address || room ? [address, room].filter(Boolean).join(", ") : "Add an address and optional room/building.";
+    Dom.preview.location.textContent =
+      address || room ? [address, room].filter(Boolean).join(", ") : "Add an address and optional room/building.";
     Dom.preview.attire.textContent = attire || "Optional attire note.";
     Dom.preview.category.textContent = category || "Pick a category for discovery.";
     Dom.preview.rsvp.textContent = rsvp || "Optional RSVP link appears here.";
@@ -97,8 +122,9 @@ export const UI = {
     Dom.settingsClubNameInput.value = activeClub.clubName;
     Dom.settingsSchoolInput.value = activeClub.school || "";
     Dom.settingsEmailInput.value = activeClub.email;
-    Dom.accountBadge.className = `badge ${dashboardStatus === "active" ? "active" : "pending"}`;
-    Dom.accountBadge.textContent = dashboardStatus === "active" ? "Active" : "Pending";
+    const isApproved = dashboardStatus === "approved";
+    Dom.accountBadge.className = `badge ${isApproved ? "active" : "pending"}`;
+    Dom.accountBadge.textContent = isApproved ? "Active" : "Pending";
 
     this.syncNavAuthState();
     await this.renderEvents();
@@ -128,7 +154,9 @@ export const UI = {
       return;
     }
 
-    Dom.eventsList.innerHTML = store.state.dashboardEvents.map((eventItem) => `
+    Dom.eventsList.innerHTML = store.state.dashboardEvents
+      .map(
+        (eventItem) => `
       <article class="event-card">
         <div class="club-top">
           <div>
@@ -146,7 +174,9 @@ export const UI = {
           <button class="btn btn-danger btn-small js-delete-event" data-id="${eventItem.id}">Delete</button>
         </div>
       </article>
-    `).join("");
+    `
+      )
+      .join("");
 
     Dom.eventsList.querySelectorAll(".js-download-event").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -199,10 +229,11 @@ export const UI = {
       return;
     }
 
-    Dom.calendarsList.innerHTML = calendars.map((cal) => {
-      const feedUrl = getCalendarFeedWebcalUrl(clubId, cal.id);
-      const httpFeedUrl = getCalendarFeedUrl(clubId, cal.id);
-      return `
+    Dom.calendarsList.innerHTML = calendars
+      .map((cal) => {
+        const feedUrl = getCalendarFeedWebcalUrl(clubId, cal.id);
+        const httpFeedUrl = getCalendarFeedUrl(clubId, cal.id);
+        return `
         <div class="calendar-card">
           <div class="calendar-card-head">
             <strong>${escapeHTML(cal.name)}</strong>
@@ -226,11 +257,17 @@ export const UI = {
           </div>
         </div>
       `;
-    }).join("");
+      })
+      .join("");
 
     Dom.calendarsList.querySelectorAll(".js-delete-calendar").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(`Delete "${calendars.find(c => c.id === btn.dataset.id)?.name}"? Events assigned to it will become unassigned.`)) return;
+        if (
+          !confirm(
+            `Delete "${calendars.find((c) => c.id === btn.dataset.id)?.name}"? Events assigned to it will become unassigned.`
+          )
+        )
+          return;
         try {
           const { deleteCalendar } = await import("../services/calendarService.js");
           await deleteCalendar(btn.dataset.id);
@@ -249,7 +286,9 @@ export const UI = {
           const original = btn.textContent;
           btn.textContent = "Copied ✓";
           this.showToast("Calendar link copied", "Share this link so others can subscribe.");
-          setTimeout(() => { btn.textContent = original; }, 2000);
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 2000);
         } catch {
           this.showToast("Copy failed", "Could not copy the link to your clipboard.");
         }
@@ -258,7 +297,11 @@ export const UI = {
 
     Dom.calendarsList.querySelectorAll(".js-google-calendar").forEach((btn) => {
       btn.addEventListener("click", () => {
-        window.open(`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(toWebcalUrl(btn.dataset.url))}`, "_blank", "noopener");
+        window.open(
+          `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(toWebcalUrl(btn.dataset.url))}`,
+          "_blank",
+          "noopener"
+        );
       });
     });
 
@@ -274,7 +317,8 @@ export const UI = {
     const select = Dom.eventCalendarSelect;
     if (!select) return;
     const current = select.value;
-    select.innerHTML = `<option value="">— No specific calendar —</option>` +
+    select.innerHTML =
+      `<option value="">— No specific calendar —</option>` +
       calendars.map((cal) => `<option value="${escapeHTML(cal.id)}">${escapeHTML(cal.name)}</option>`).join("");
     if (current) select.value = current;
   },
@@ -295,7 +339,9 @@ export const UI = {
     }
 
     const maxDownloads = Math.max(...events.map((eventItem) => eventItem.download_count || 0), 1);
-    Dom.insightsChart.innerHTML = events.map((eventItem) => `
+    Dom.insightsChart.innerHTML = events
+      .map(
+        (eventItem) => `
       <div class="bar-group">
         <div class="bar-track">
           <div class="bar-fill" data-height="${Math.max(8, Math.round(((eventItem.download_count || 0) / maxDownloads) * 100))}"></div>
@@ -303,7 +349,9 @@ export const UI = {
         <div class="bar-value">${escapeHTML(String(eventItem.download_count || 0))}</div>
         <div class="bar-label">${escapeHTML(eventItem.title)}</div>
       </div>
-    `).join("");
+    `
+      )
+      .join("");
 
     Dom.insightsChart.querySelectorAll(".bar-fill").forEach((bar) => {
       requestAnimationFrame(() => {
@@ -327,7 +375,9 @@ export const UI = {
         return;
       }
 
-      Dom.adminList.innerHTML = pendingClubs.map((club) => `
+      Dom.adminList.innerHTML = pendingClubs
+        .map(
+          (club) => `
         <article class="event-card">
           <div class="club-top">
             <div>
@@ -345,28 +395,42 @@ export const UI = {
             <button class="btn btn-danger btn-small js-reject-club" data-id="${club.id}">Reject</button>
           </div>
         </article>
-      `).join("");
+      `
+        )
+        .join("");
+
+      const handleAdminError = (error, title) => {
+        const message = error?.message || "Unknown error.";
+        if (/unauthori[sz]ed/i.test(message) || /401/.test(message)) {
+          this.clearAdminAccess();
+          this.showToast("Admin token rejected", "The admin token was invalid. Please re-enter it.");
+          showView("landing");
+        } else {
+          this.showToast(title, message);
+        }
+      };
 
       Dom.adminList.querySelectorAll(".js-approve-club").forEach((button) => {
         button.addEventListener("click", async () => {
           try {
             await approveClub(button.dataset.id);
-            this.showToast("Club approved", "The club is now active in discovery.");
+            this.showToast("Club approved", "The club is now visible in discovery.");
             this.renderAdminList();
           } catch (error) {
-            this.showToast("Approve failed", error.message);
+            handleAdminError(error, "Approve failed");
           }
         });
       });
 
       Dom.adminList.querySelectorAll(".js-reject-club").forEach((button) => {
         button.addEventListener("click", async () => {
+          const reason = window.prompt("Optional denial reason (shown in the applicant's email):", "") || "";
           try {
-            await rejectClub(button.dataset.id);
-            this.showToast("Club rejected", "The pending application was removed.");
+            await rejectClub(button.dataset.id, reason);
+            this.showToast("Club rejected", "The applicant was marked denied.");
             this.renderAdminList();
           } catch (error) {
-            this.showToast("Reject failed", error.message);
+            handleAdminError(error, "Reject failed");
           }
         });
       });
@@ -405,7 +469,9 @@ export const UI = {
       const clubEvents = (club.events || [])
         .map(mapEvent)
         .sort((a, b) => new Date(`${a.date}T${a.start_time}`) - new Date(`${b.date}T${b.start_time}`));
-      const upcomingEvents = clubEvents.filter((eventItem) => new Date(`${eventItem.date}T${eventItem.start_time}`) >= new Date());
+      const upcomingEvents = clubEvents.filter(
+        (eventItem) => new Date(`${eventItem.date}T${eventItem.start_time}`) >= new Date()
+      );
       const nextEvent = upcomingEvents[0] || null;
 
       return {
@@ -436,7 +502,9 @@ export const UI = {
       return;
     }
 
-    Dom.clubGrid.innerHTML = store.state.currentDiscoveryData.map((club) => `
+    Dom.clubGrid.innerHTML = store.state.currentDiscoveryData
+      .map(
+        (club) => `
       <article class="club-card" data-club-id="${club.id}">
         <div class="club-top">
           <div>
@@ -446,36 +514,54 @@ export const UI = {
           <div class="club-count">${escapeHTML(String(club.events.length))} events</div>
         </div>
         <p>Review upcoming events and subscribe to this club's calendar feed.</p>
-        ${club.nextEvent ? `
+        ${
+          club.nextEvent
+            ? `
           <div class="event-preview">
             <div class="event-preview-title">${escapeHTML(club.nextEvent.title)}</div>
             <div class="event-preview-copy">${escapeHTML(formatTimeRange(club.nextEvent.date, club.nextEvent.start_time, club.nextEvent.end_time))}</div>
           </div>
-        ` : `
+        `
+            : `
           <div class="stale-indicator">No upcoming events yet</div>
-        `}
+        `
+        }
         <div class="club-actions">
           <button class="btn btn-primary btn-small js-google-subscribe" data-id="${club.id}">Subscribe on Google Calendar</button>
           <button class="btn btn-ghost btn-small js-apple-subscribe" data-id="${club.id}">Subscribe on Apple Calendar</button>
           <button class="btn btn-ghost btn-small js-toggle-events" data-expanded="false" ${club.events.length ? "" : "disabled"}>View All Events</button>
         </div>
         <div class="club-events-expanded" hidden>
-          ${club.events.length ? club.events.map((eventItem) => `
+          ${
+            club.events.length
+              ? club.events
+                  .map(
+                    (eventItem) => `
             <div class="mini-event">
               <strong class="mini-event-title">${escapeHTML(eventItem.title)}</strong>
               <div>${escapeHTML(formatTimeRange(eventItem.date, eventItem.start_time, eventItem.end_time))}</div>
               <div>${escapeHTML([eventItem.address, eventItem.room].filter(Boolean).join(", "))}</div>
             </div>
-          `).join("") : `<div class="mini-event">No upcoming events yet</div>`}
+          `
+                  )
+                  .join("")
+              : `<div class="mini-event">No upcoming events yet</div>`
+          }
         </div>
       </article>
-    `).join("");
+    `
+      )
+      .join("");
 
     Dom.clubGrid.querySelectorAll(".js-google-subscribe").forEach((button) => {
       button.addEventListener("click", () => {
         const feedUrl = getClubFeedUrl(button.dataset.id);
         const webcalUrl = toWebcalUrl(feedUrl);
-        window.open(`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`, "_blank", "noopener");
+        window.open(
+          `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`,
+          "_blank",
+          "noopener"
+        );
       });
     });
 
@@ -518,9 +604,13 @@ export const UI = {
       return;
     }
 
-    container.innerHTML = matches.map((school) => `
+    container.innerHTML = matches
+      .map(
+        (school) => `
       <button class="suggestion" type="button" data-school="${escapeHTML(school)}">${escapeHTML(school)}</button>
-    `).join("");
+    `
+      )
+      .join("");
     container.classList.add("visible");
     input.setAttribute("aria-expanded", "true");
     container.querySelectorAll(".suggestion").forEach((button) => {
@@ -552,20 +642,27 @@ export const UI = {
   },
 
   ensureAdminAccess() {
-    if (sessionStorage.getItem(STORAGE_KEYS.adminSession) === "true") return true;
+    // A token already stored this session is treated as "allowed to try."
+    // Real verification happens server-side — if the token is wrong, the
+    // approve/reject call returns 401 and we clear it then.
+    if (sessionStorage.getItem(ADMIN_TOKEN_KEY)) return true;
 
-    const entry = window.prompt("Enter the admin password to access Club Cal admin:");
-    if (entry === ADMIN_PASSWORD) {
-      sessionStorage.setItem(STORAGE_KEYS.adminSession, "true");
+    const entry = window.prompt("Enter the admin access token for Club Cal:");
+    if (entry && entry.trim()) {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, entry.trim());
       return true;
     }
 
     if (window.location.hash === "#admin") {
       history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     }
-    this.showToast("Admin access denied", "The admin password was incorrect.");
+    this.showToast("Admin access required", "An admin token is required to open the admin panel.");
     showView("landing");
     return false;
+  },
+
+  clearAdminAccess() {
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
   },
 
   setTab(name) {

@@ -1,6 +1,5 @@
 export const STORAGE_KEYS = {
-  lastViewedSchool: "clubcal_last_viewed_school",
-  adminSession: "clubcal_admin_session"
+  lastViewedSchool: "clubcal_last_viewed_school"
 };
 
 export const store = {
@@ -33,9 +32,8 @@ export const store = {
 
   setDiscoveryRows(rows) {
     this.state.currentClubRows = rows;
-    this.state.currentDiscoveryData = this.state.currentFilter === "All"
-      ? rows
-      : rows.filter((club) => club.category === this.state.currentFilter);
+    this.state.currentDiscoveryData =
+      this.state.currentFilter === "All" ? rows : rows.filter((club) => club.category === this.state.currentFilter);
   },
 
   setFilter(filter) {

@@ -39,10 +39,16 @@ function escapeICS(value: string | null | undefined) {
     .replace(/;/g, "\\;");
 }
 
+// Floating time (RFC 5545 form 1): YYYYMMDDTHHMMSS with no timezone
+// marker. Calendar apps render it at the same wall-clock time for every
+// subscriber regardless of their device timezone, which is what we want
+// for a campus event at a specific school. Matches the format produced
+// by the client-side downloadICS helper in src/utils/ics.js.
 function fmt(dateStr: string, timeStr: string) {
-  const clean = `${dateStr}T${String(timeStr || "").substring(0, 5)}:00`;
-  const date = new Date(clean);
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const clean = String(timeStr || "")
+    .substring(0, 5)
+    .replace(":", "");
+  return `${String(dateStr).replace(/-/g, "")}T${clean}00`;
 }
 
 function fmtUtcTimestamp(value: string | null | undefined) {
@@ -62,11 +68,13 @@ function buildEventBlock(eventItem: EventRow, clubName: string) {
   const description = escapeICS(eventItem.description || "");
   const location = escapeICS([eventItem.address, eventItem.room].filter(Boolean).join(", "));
   const lastModified = fmtUtcTimestamp(eventItem.updated_at || eventItem.created_at);
+  const dtstamp = fmtUtcTimestamp(new Date().toISOString()); // RFC 5545 requires DTSTAMP
   const sequence = Number.isFinite(eventItem.sequence) ? Number(eventItem.sequence) : 0;
 
   return [
     "BEGIN:VEVENT",
     `UID:${escapeICS(`${eventItem.id}@clubcal.app`)}`,
+    `DTSTAMP:${dtstamp}`,
     `SUMMARY:${escapeICS(`${eventItem.title} - ${clubName}`)}`,
     `DTSTART:${fmt(eventItem.date, eventItem.start_time)}`,
     `DTEND:${fmt(eventItem.date, eventItem.end_time)}`,
@@ -141,10 +149,7 @@ Deno.serve(async (request) => {
     calendarName = `${club.club_name} — ${calRow.name}`;
   }
 
-  let eventsQuery = supabase
-    .from("events")
-    .select("*")
-    .eq("club_id", clubId);
+  let eventsQuery = supabase.from("events").select("*").eq("club_id", clubId);
 
   if (calendarId) {
     eventsQuery = eventsQuery.eq("calendar_id", calendarId);

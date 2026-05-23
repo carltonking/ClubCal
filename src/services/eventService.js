@@ -14,10 +14,7 @@ export async function fetchEventsForClub(clubId, sortField = "created_at", ascen
 }
 
 export async function fetchDiscoverySchools() {
-  const { data, error } = await supabase
-    .from("clubs")
-    .select("school")
-    .eq("status", "active");
+  const { data, error } = await supabase.from("clubs").select("school").eq("status", "approved");
 
   if (error) throw error;
   return [...new Set((data || []).map((row) => row.school).filter(Boolean))];
@@ -28,7 +25,7 @@ export async function fetchActiveClubsBySchool(school) {
     .from("clubs")
     .select("*, events(*)")
     .eq("school", school)
-    .eq("status", "active");
+    .eq("status", "approved");
 
   if (error) throw error;
   return data || [];
@@ -60,22 +57,23 @@ export async function createEvent(payload) {
 }
 
 export async function deleteEvent(eventId) {
-  const { error } = await supabase
-    .from("events")
-    .delete()
-    .eq("id", eventId);
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
 
   if (error) throw error;
 }
 
 export async function updateEventDownloadCount(eventItem) {
-  const nextCount = (eventItem.download_count || 0) + 1;
-  const { error } = await supabase
-    .from("events")
-    .update({ download_count: nextCount })
-    .eq("id", eventItem.id);
+  // Atomic increment via the `increment_event_download_count` Postgres
+  // function (defined in the 20260416_add_download_count_rpc migration).
+  // This avoids the read-modify-write race that would drop increments
+  // when two users download the same event at the same time.
+  const { data, error } = await supabase.rpc("increment_event_download_count", {
+    event_id: eventItem.id
+  });
 
   if (error) throw error;
+
+  const nextCount = typeof data === "number" ? data : (eventItem.download_count || 0) + 1;
   eventItem.download_count = nextCount;
   return nextCount;
 }

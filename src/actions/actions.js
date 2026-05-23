@@ -61,7 +61,8 @@ export const Actions = {
       UI.setTab("events");
       showView("dashboard");
     } catch (error) {
-      const message = error.message === "Invalid email or password." ? error.message : "No approved club found for this email.";
+      const message =
+        error.message === "Invalid email or password." ? error.message : "No approved club found for this email.";
       setError(Dom.signinForm, "signinPassword", message);
     }
   },

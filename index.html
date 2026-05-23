@@ -1,2194 +1,1504 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <script>
-    (function() {
-      var t = localStorage.getItem("clubcal_theme");
-      var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      if (t === "dark" || (!t && prefersDark)) document.documentElement.setAttribute("data-theme", "dark");
-    })();
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Club Cal</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --navy: #0f172a;
-      --navy-2: #334155;
-      --coral: #2563eb;
-      --coral-dark: #1d4ed8;
-      --warm: #f8fafc;
-      --card: #ffffff;
-      --line: #e2e8f0;
-      --text: #0f172a;
-      --muted: #64748b;
-      --success: #16a34a;
-      --success-bg: #f0fdf4;
-      --amber: #fef3c7;
-      --amber-text: #92400e;
-      --danger: #dc2626;
-      --danger-bg: #fef2f2;
-      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      --radius: 8px;
-      --radius-lg: 10px;
-      --max: 1180px;
-    }
-
-    /* ── Dark mode ─────────────────────────────────────── */
-    [data-theme="dark"] {
-      color-scheme: dark;
-      --warm: #0f172a;
-      --card: #1e293b;
-      --line: #2d3f55;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --navy: #e2e8f0;
-      --navy-2: #94a3b8;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      --amber: rgba(251, 191, 36, 0.12);
-      --amber-text: #fcd34d;
-    }
-
-    [data-theme="dark"] body {
-      background: var(--warm);
-      color: var(--text);
-    }
-
-    [data-theme="dark"] .topbar {
-      background: rgba(15, 23, 42, 0.94);
-    }
-
-    [data-theme="dark"] .nav-toggle {
-      background: #1e293b;
-      border-color: var(--line);
-    }
-
-    [data-theme="dark"] .nav-toggle-lines span {
-      background: var(--text);
-    }
-
-    [data-theme="dark"] .nav-link:hover,
-    [data-theme="dark"] .nav-link:focus-visible {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text);
-    }
-
-    [data-theme="dark"] .nav-links {
-      background: #0f172a;
-    }
-
-    [data-theme="dark"] input,
-    [data-theme="dark"] select,
-    [data-theme="dark"] textarea {
-      background: #0f172a;
-      color: var(--text);
-      border-color: var(--line);
-    }
-
-    [data-theme="dark"] input::placeholder,
-    [data-theme="dark"] textarea::placeholder {
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] .btn-secondary,
-    [data-theme="dark"] .btn-ghost {
-      background: #1e293b;
-      color: var(--text);
-      border-color: var(--line);
-    }
-
-    [data-theme="dark"] .btn-secondary:hover,
-    [data-theme="dark"] .btn-ghost:hover {
-      background: #273549;
-    }
-
-    [data-theme="dark"] .flow-tag {
-      background: rgba(37, 99, 235, 0.18);
-      color: #93c5fd;
-    }
-
-    [data-theme="dark"] .eyebrow {
-      background: rgba(37, 99, 235, 0.15);
-      color: #93c5fd;
-    }
-
-    [data-theme="dark"] .badge.pending {
-      background: rgba(251, 191, 36, 0.15);
-      color: #fcd34d;
-    }
-
-    [data-theme="dark"] .brand-mark {
-      background: #e2e8f0;
-    }
-
-    [data-theme="dark"] .brand-mark svg path {
-      fill: #0f172a;
-    }
-
-    [data-theme="dark"] .tab-btn {
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] .tab-btn.active {
-      color: var(--text);
-      border-bottom-color: var(--coral);
-    }
-
-    [data-theme="dark"] .tab-btn:hover {
-      color: var(--text);
-    }
-
-    [data-theme="dark"] .notice {
-      background: rgba(251, 191, 36, 0.1);
-      border-left-color: #f59e0b;
-      color: #fcd34d;
-    }
-
-    [data-theme="dark"] .config-notice {
-      background: rgba(255, 255, 255, 0.04);
-      border-left-color: var(--muted);
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] .bar-fill {
-      background: var(--coral);
-    }
-
-    [data-theme="dark"] .empty-state,
-    [data-theme="dark"] .loading-state {
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] dt {
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] #calendar-feed-url {
-      background: #0f172a;
-      color: var(--text);
-    }
-
-    [data-theme="dark"] .site-footer {
-      background: #0b1221;
-      border-top-color: var(--line);
-    }
-
-    [data-theme="dark"] .footer-link {
-      color: var(--muted);
-    }
-
-    [data-theme="dark"] .toast {
-      background: #1e293b;
-      color: var(--text);
-      border-color: var(--line);
-    }
-
-    .theme-toggle { padding: 10px 12px; }
-    .theme-toggle .icon-sun  { display: none; }
-    .theme-toggle .icon-moon { display: block; }
-    [data-theme="dark"] .theme-toggle .icon-sun  { display: block; }
-    [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
-
-    /* ── End dark mode ──────────────────────────────────── */
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background: var(--warm);
-      min-height: 100vh;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    img,
-    svg {
-      display: block;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    .shell {
-      min-height: 100vh;
-      position: relative;
-      overflow-x: clip;
-    }
-
-    .container {
-      width: min(var(--max), calc(100vw - 32px));
-      margin: 0 auto;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      backdrop-filter: blur(16px);
-      background: rgba(248, 250, 252, 0.94);
-      border-bottom: 1px solid var(--line);
-    }
-
-    .topbar-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      padding: 16px 0;
-      position: relative;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      color: var(--navy);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      z-index: 3;
-    }
-
-    .brand-mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: var(--navy);
-      color: white;
-      display: grid;
-      place-items: center;
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-    }
-
-    .brand-name {
-      font-size: 1.1rem;
-    }
-
-    .nav-toggle {
-      width: 48px;
-      height: 48px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: white;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 3;
-      box-shadow: 0 12px 24px rgba(15, 27, 53, 0.08);
-    }
-
-    .nav-toggle-lines {
-      width: 20px;
-      height: 14px;
-      position: relative;
-    }
-
-    .nav-toggle-lines span {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      border-radius: 999px;
-      background: var(--navy);
-      transition: transform 200ms ease, opacity 200ms ease, top 200ms ease;
-    }
-
-    .nav-toggle-lines span:nth-child(1) { top: 0; }
-    .nav-toggle-lines span:nth-child(2) { top: 6px; }
-    .nav-toggle-lines span:nth-child(3) { top: 12px; }
-
-    .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(1) {
-      top: 6px;
-      transform: rotate(45deg);
-    }
-
-    .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(2) {
-      opacity: 0;
-    }
-
-    .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(3) {
-      top: 6px;
-      transform: rotate(-45deg);
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .nav-link {
-      padding: 11px 15px;
-      border-radius: 999px;
-      color: var(--muted);
-      transition: 180ms ease;
-      font-weight: 600;
-    }
-
-    .nav-link:hover,
-    .nav-link:focus-visible {
-      background: #eff6ff;
-      color: var(--navy);
-      outline: none;
-    }
-
-    .nav-link.cta {
-      background: var(--navy);
-      color: white;
-    }
-
-    .nav-link.cta:hover,
-    .nav-link.cta:focus-visible {
-      background: var(--navy-2);
-    }
-
-    main {
-      padding: 20px 0 60px;
-    }
-
-    .view {
-      display: none;
-      opacity: 0;
-      transform: translateY(14px);
-      transition: opacity 320ms ease, transform 320ms ease;
-    }
-
-    .view.active {
-      display: block;
-    }
-
-    .view.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .hero {
-      padding: 64px 0 36px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-      gap: 32px;
-      align-items: center;
-    }
-
-    .hero-copy {
-      padding: 8px 0;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #eff6ff;
-      color: var(--coral-dark);
-      font-size: 0.86rem;
-      font-weight: 600;
-      margin-bottom: 18px;
-    }
-
-    .hero-title,
-    .section-title,
-    .view h2,
-    .dashboard-title {
-      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      margin: 0;
-      color: var(--navy);
-    }
-
-    .hero-panel-title {
-      color: white !important;
-    }
-
-    .hero-title {
-      font-size: clamp(2.6rem, 5vw, 4.2rem);
-      max-width: 12ch;
-    }
-
-    .hero-copy p,
-    .section-subtitle,
-    .muted {
-      color: var(--muted);
-      line-height: 1.7;
-    }
-
-    .hero-copy p {
-      font-size: 1rem;
-      margin: 18px 0 22px;
-      max-width: 60ch;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-top: 22px;
-    }
-
-    .hero-search-panel,
-    .hero-panel,
-    .card,
-    .panel,
-    .form-shell,
-    .club-card,
-    .preview-card,
-    .event-card,
-    .settings-card,
-    .insights-card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-    }
-
-    .hero-search-panel {
-      padding: 20px;
-      margin-bottom: 20px;
-      background: var(--card);
-    }
-
-    .hero-search-label {
-      font-size: 0.92rem;
-      font-weight: 800;
-      color: var(--navy);
-      margin-bottom: 10px;
-    }
-
-    .hero-panel {
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-      min-height: 360px;
-      background: linear-gradient(180deg, #0f172a, #1e293b);
-      color: white;
-    }
-
-    .hero-panel::before,
-    .hero-panel::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-    }
-
-    .hero-panel::before {
-      width: 220px;
-      height: 220px;
-      background: rgba(37, 99, 235, 0.14);
-      top: -70px;
-      right: -40px;
-    }
-
-    .hero-panel::after {
-      width: 130px;
-      height: 130px;
-      background: rgba(255, 255, 255, 0.05);
-      bottom: 40px;
-      left: -30px;
-    }
-
-    .panel-chip {
-      display: inline-flex;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.1);
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 22px;
-    }
-
-    .hero-panel-title {
-      font-size: 2rem;
-      color: white;
-      margin: 0 0 10px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-panel-copy {
-      color: rgba(255, 255, 255, 0.78);
-      line-height: 1.7;
-      max-width: 28ch;
-      margin: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-stats {
-      display: grid;
-      gap: 14px;
-      position: relative;
-      z-index: 1;
-      margin-top: 28px;
-    }
-
-    .stat-row {
-      display: grid;
-      grid-template-columns: 72px 1fr;
-      gap: 14px;
-      align-items: center;
-      padding: 16px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .stat-row strong {
-      font-size: 1.6rem;
-      letter-spacing: -0.04em;
-    }
-
-    .stat-title {
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .stat-copy {
-      color: rgba(255, 255, 255, 0.72);
-    }
-
-    .social-proof {
-      text-align: center;
-      padding: 12px 0 36px;
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.8;
-      max-width: 60ch;
-      margin: 0 auto;
-    }
-
-    .section {
-      padding: 44px 0;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .section-head.compact {
-      margin-bottom: 14px;
-    }
-
-    .section-title {
-      font-size: clamp(1.8rem, 3vw, 2.5rem);
-    }
-
-    .flow-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 22px;
-    }
-
-    .card,
-    .panel,
-    .form-shell,
-    .preview-card,
-    .event-card,
-    .club-card,
-    .settings-card,
-    .insights-card {
-      padding: 24px;
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-
-    .card:hover,
-    .club-card:hover,
-    .event-card:hover,
-    .preview-card:hover,
-    .insights-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    .flow-tag,
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-
-    .flow-tag {
-      background: #eff6ff;
-      color: var(--coral-dark);
-      margin-bottom: 14px;
-    }
-
-    .flow-tag.inverse {
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
-    }
-
-    .card-heading,
-    .preview-heading,
-    .settings-heading,
-    .admin-heading,
-    .event-heading {
-      margin: 0;
-      color: var(--navy);
-    }
-
-    .card-heading,
-    .settings-heading {
-      font-size: 1.2rem;
-    }
-
-    .preview-heading {
-      font-size: 1.3rem;
-    }
-
-    .event-heading {
-      font-size: 1.12rem;
-      margin-bottom: 6px;
-    }
-
-    .card-text-top {
-      margin: 0 0 8px;
-    }
-
-    .helper-row {
-      margin-top: 18px;
-    }
-
-    .helper-link {
-      color: var(--coral-dark);
-      font-weight: 600;
-    }
-
-    .btn {
-      border: 0;
-      cursor: pointer;
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: transform 150ms ease, box-shadow 180ms ease, background 180ms ease, color 180ms ease;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .btn:focus-visible,
-    input:focus-visible,
-    select:focus-visible,
-    textarea:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.16);
-    }
-
-    .btn-primary {
-      background: var(--coral);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--coral-dark);
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: #f8fafc;
-      color: var(--navy);
-      border: 1px solid var(--line);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.9);
-      transform: translateY(-1px);
-    }
-
-    .btn-small {
-      padding: 10px 13px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-      border: 1px solid var(--danger);
-      box-shadow: none;
-    }
-
-    .btn-ghost {
-      background: #f8fafc;
-      color: var(--navy);
-      border: 1px solid var(--line);
-      box-shadow: none;
-    }
-
-    .btn-danger:focus-visible,
-    .btn-ghost:focus-visible {
-      outline: 2px solid var(--coral);
-      outline-offset: 2px;
-      box-shadow: none;
-    }
-
-    .btn[disabled] {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    .split-view,
-    .dashboard-layout {
-      display: grid;
-      gap: 26px;
-    }
-
-    .split-view {
-      grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
-      align-items: start;
-      padding: 36px 0 12px;
-    }
-
-    .intro-panel {
-      padding: 28px;
-      border-radius: var(--radius-lg);
-      background: var(--card);
-      color: var(--text);
-      min-height: 100%;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--line);
-    }
-
-    .intro-panel h2 {
-      color: var(--navy);
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-      margin: 0 0 14px;
-    }
-
-    .intro-panel p {
-      color: var(--muted);
-      line-height: 1.7;
-      max-width: 36ch;
-      margin: 0;
-    }
-
-    .intro-list {
-      display: grid;
-      gap: 14px;
-      margin-top: 28px;
-    }
-
-    .intro-item {
-      padding: 15px 16px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-    }
-
-    .form-shell h2,
-    .panel h2,
-    .dashboard-title {
-      font-size: clamp(1.7rem, 3vw, 2.25rem);
-      margin-bottom: 10px;
-    }
-
-    .form {
-      display: grid;
-      gap: 16px;
-      margin-top: 20px;
-    }
-
-    .field,
-    .field-row {
-      display: grid;
-      gap: 8px;
-    }
-
-    .field-row {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    label {
-      font-weight: 700;
-      color: var(--navy);
-      font-size: 0.95rem;
-    }
-
-    .label-note {
-      color: var(--muted);
-      font-weight: 500;
-      margin-left: 6px;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px 14px;
-      background: #fff;
-      color: var(--text);
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-    }
-
-    textarea {
-      min-height: 130px;
-      resize: vertical;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: rgba(37, 99, 235, 0.7);
-      transform: translateY(-1px);
-    }
-
-    .error {
-      font-size: 0.85rem;
-      color: var(--danger);
-      min-height: 1em;
-    }
-
-    .notice {
-      border-radius: 8px;
-      padding: 16px 18px;
-      background: var(--amber);
-      color: var(--amber-text);
-      border: 1px solid rgba(124, 90, 6, 0.12);
-      border-left: 4px solid #f59e0b;
-      line-height: 1.65;
-    }
-
-    .config-notice {
-      background: rgba(15, 27, 53, 0.06);
-      border-left-color: var(--navy);
-      color: var(--navy);
-    }
-
-    .success-panel {
-      display: none;
-      margin-top: 22px;
-      padding: 28px;
-      border-radius: 10px;
-      background: var(--success-bg);
-      border: 1px solid rgba(23, 137, 91, 0.16);
-      text-align: center;
-    }
-
-    .success-panel.visible {
-      display: block;
-      animation: fadeUp 320ms ease;
-    }
-
-    .checkmark-wrap {
-      width: 78px;
-      height: 78px;
-      margin: 0 auto 16px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      background: rgba(22, 163, 74, 0.08);
-    }
-
-    .checkmark circle,
-    .checkmark path {
-      stroke: var(--success);
-      stroke-width: 5;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-dasharray: 120;
-      stroke-dashoffset: 120;
-      animation: drawCheck 900ms ease forwards;
-    }
-
-    .checkmark path {
-      animation-delay: 180ms;
-    }
-
-    .success-title {
-      margin: 0 0 8px;
-      color: var(--success);
-    }
-
-    .success-copy {
-      margin: 0 0 10px;
-    }
-
-    .dashboard-layout {
-      grid-template-columns: 1fr;
-      padding: 22px 0;
-    }
-
-    .dashboard-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
-    .dashboard-subtitle {
-      margin: 10px 0 0;
-    }
-
-    .badge {
-      min-height: 34px;
-    }
-
-    .badge.pending {
-      background: var(--amber);
-      color: var(--amber-text);
-    }
-
-    .badge.active {
-      background: rgba(23, 137, 91, 0.12);
-      color: var(--success);
-    }
-
-    .badge.stale {
-      background: rgba(15, 27, 53, 0.08);
-      color: var(--muted);
-    }
-
-    .dashboard-tabs {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 22px;
-      position: relative;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 10px;
-    }
-
-    .tab-btn {
-      background: transparent;
-      color: var(--muted);
-      border: 0;
-      padding: 10px 6px;
-      font-weight: 800;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .tab-btn.active {
-      color: var(--navy);
-    }
-
-    .tab-btn.active::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -11px;
-      height: 3px;
-      border-radius: 999px;
-      background: var(--coral);
-      animation: tabSlide 240ms ease;
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-      animation: fadeUp 240ms ease;
-    }
-
-    .create-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
-      gap: 22px;
-      align-items: start;
-    }
-
-    .preview-meta,
-    .event-meta,
-    .club-meta,
-    .settings-meta {
-      display: grid;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .meta-line {
-      display: flex;
-      gap: 10px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .meta-line strong {
-      color: var(--navy);
-      min-width: 98px;
-      font-size: 0.9rem;
-    }
-
-    .calendar-pulse {
-      animation: pulse 420ms ease;
-    }
-
-    .event-grid,
-    .club-grid,
-    .insights-grid {
-      display: grid;
-      gap: 18px;
-    }
-
-    .club-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .event-actions,
-    .club-actions,
-    .settings-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    .settings-calendar-row {
-      align-items: end;
-    }
-
-    .calendar-card {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px;
-      margin-bottom: 12px;
-    }
-
-    .calendar-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-    }
-
-    .calendar-card-head strong {
-      font-size: 1rem;
-      color: var(--navy);
-    }
-
-    .btn-danger {
-      color: #c0392b;
-      border-color: #e8b4b0;
-    }
-
-    .btn-danger:hover {
-      background: #fdf0ef;
-    }
-
-    .settings-calendar-actions .btn {
-      min-height: 42px;
-    }
-
-    #calendar-feed-url {
-      font-size: 0.95rem;
-      color: var(--navy);
-      background: #fff;
-    }
-
-    .empty-state {
-      padding: 30px 24px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px dashed var(--line);
-      color: var(--muted);
-      text-align: center;
-    }
-
-    .settings-card dl {
-      display: grid;
-      grid-template-columns: 130px 1fr;
-      gap: 14px 18px;
-      margin: 18px 0 24px;
-    }
-
-    .settings-card dt {
-      font-weight: 800;
-      color: var(--navy);
-    }
-
-    .settings-card dd {
-      margin: 0;
-      color: var(--muted);
-    }
-
-    .settings-form[hidden] {
-      display: none !important;
-    }
-
-    .discovery-layout {
-      padding: 22px 0;
-      display: grid;
-      gap: 20px;
-    }
-
-    .search-shell {
-      position: relative;
-    }
-
-    .search-input {
-      padding-right: 44px;
-      height: 58px;
-      border-radius: 8px;
-      background: white;
-    }
-
-    .search-icon {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--muted);
-      pointer-events: none;
-    }
-
-    .suggestions {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: calc(100% + 10px);
-      background: white;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-      overflow: hidden;
-      display: none;
-      z-index: 20;
-    }
-
-    .suggestions.visible {
-      display: block;
-      animation: fadeUp 180ms ease;
-    }
-
-    .suggestion {
-      width: 100%;
-      background: transparent;
-      border: 0;
-      cursor: pointer;
-      text-align: left;
-      padding: 14px 16px;
-      color: var(--text);
-      transition: background 160ms ease;
-    }
-
-    .suggestion:hover,
-    .suggestion:focus-visible {
-      background: rgba(15, 27, 53, 0.05);
-      outline: none;
-    }
-
-    .filter-bar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .filter-chip {
-      border: 1px solid var(--line);
-      background: white;
-      color: var(--muted);
-      padding: 10px 14px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-weight: 700;
-      box-shadow: none;
-    }
-
-    .filter-chip.active {
-      background: var(--coral);
-      color: white;
-      border-color: var(--coral);
-    }
-
-    .club-card {
-      background: var(--card);
-    }
-
-    .club-top {
-      display: flex;
-      align-items: start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .club-count {
-      color: var(--muted);
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .club-card p {
-      color: var(--muted);
-      line-height: 1.65;
-      margin: 0 0 16px;
-    }
-
-    .event-preview {
-      padding: 14px 15px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      margin-bottom: 12px;
-    }
-
-    .event-preview-title {
-      font-weight: 800;
-      color: var(--navy);
-      margin-bottom: 4px;
-    }
-
-    .event-preview-copy {
-      color: var(--muted);
-    }
-
-    .club-events-expanded {
-      display: grid;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .mini-event {
-      padding: 12px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      color: var(--muted);
-      line-height: 1.55;
-    }
-
-    .mini-event-title {
-      display: block;
-      color: var(--navy);
-      margin-bottom: 4px;
-    }
-
-    .last-updated {
-      color: var(--muted);
-      font-size: 0.92rem;
-      margin-top: 10px;
-    }
-
-    .stale-indicator {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .insights-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      margin-bottom: 20px;
-    }
-
-    .insight-number {
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--navy);
-      margin: 0 0 8px;
-    }
-
-    .bar-chart {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 14px;
-      align-items: end;
-      min-height: 240px;
-      margin-top: 20px;
-    }
-
-    .bar-group {
-      display: grid;
-      gap: 10px;
-      align-items: end;
-    }
-
-    .bar-track {
-      height: 180px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      display: flex;
-      align-items: end;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      width: 100%;
-      background: linear-gradient(180deg, #3b82f6, var(--coral));
-      border-radius: 8px 8px 0 0;
-      height: 0;
-      transition: height 240ms ease;
-    }
-
-    .bar-label {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .bar-value {
-      font-weight: 800;
-      color: var(--navy);
-    }
-
-    .loading-state {
-      color: var(--muted);
-      text-align: center;
-      padding: 28px 12px;
-    }
-
-    .toast-region {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 60;
-      display: grid;
-      gap: 10px;
-      width: min(360px, calc(100vw - 24px));
-    }
-
-    .toast {
-      background: rgba(15, 23, 42, 0.96);
-      color: white;
-      border-radius: 8px;
-      padding: 14px 16px;
-      box-shadow: 0 24px 50px rgba(15, 27, 53, 0.24);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      animation: toastIn 260ms ease, toastOut 260ms ease 3.2s forwards;
-    }
-
-    .toast strong {
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .site-footer {
-      border-top: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
-      margin-top: 30px;
-    }
-
-    .site-footer-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 22px 0 28px;
-      flex-wrap: wrap;
-    }
-
-    .footer-links {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .footer-link {
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .footer-link:hover,
-    .footer-link:focus-visible {
-      color: var(--navy);
-      outline: none;
-    }
-
-    .category-social {
-      background: #dbeafe;
-      color: #1d4ed8;
-    }
-
-    .category-academic {
-      background: #e2e8f0;
-      color: var(--navy);
-    }
-
-    .category-sports {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .category-arts {
-      background: #ede9fe;
-      color: #5b21b6;
-    }
-
-    .category-volunteer {
-      background: #ecfccb;
-      color: #3f6212;
-    }
-
-    .category-meeting,
-    .category-other {
-      background: #f1f5f9;
-      color: #475569;
-    }
-
-    .animate-sequence {
-      opacity: 0;
-      transform: translateY(16px);
-      animation: fadeUp 700ms ease forwards;
-    }
-
-    .delay-1 { animation-delay: 80ms; }
-    .delay-2 { animation-delay: 180ms; }
-    .delay-3 { animation-delay: 280ms; }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes drawCheck {
-      to {
-        stroke-dashoffset: 0;
-      }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.06); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes toastIn {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes toastOut {
-      to {
-        opacity: 0;
-        transform: translateY(14px);
-      }
-    }
-
-    @keyframes tabSlide {
-      from {
-        transform: scaleX(0.4);
-        opacity: 0;
-      }
-      to {
-        transform: scaleX(1);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 1080px) {
-      .split-view,
-      .create-grid,
-      .club-grid,
-      .flow-grid,
-      .insights-grid {
-        grid-template-columns: 1fr;
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("clubcal_theme");
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (t === "dark" || (!t && prefersDark)) document.documentElement.setAttribute("data-theme", "dark");
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Club Cal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --navy: #0f172a;
+        --navy-2: #334155;
+        --accent: #2563eb;
+        --accent-dark: #1d4ed8;
+        --accent-subtle: #eff6ff;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --border: #e2e8f0;
+        --border-light: #f1f5f9;
+        --text: #0f172a;
+        --muted: #64748b;
+        --muted-light: #94a3b8;
+        --success: #16a34a;
+        --success-bg: #f0fdf4;
+        --amber: #fef3c7;
+        --amber-text: #92400e;
+        --danger: #dc2626;
+        --danger-bg: #fef2f2;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+        --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+        --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+        --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+        --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-md: 10px;
+        --radius-lg: 12px;
+        --max: 1180px;
       }
 
-      .hero-title {
-        max-width: 12ch;
+      [data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0b1121;
+        --surface: #131c2f;
+        --border: #1e293b;
+        --border-light: #1a2236;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --muted-light: #64748b;
+        --navy: #e2e8f0;
+        --navy-2: #94a3b8;
+        --accent-subtle: rgba(37, 99, 235, 0.12);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        --amber: rgba(251, 191, 36, 0.12);
+        --amber-text: #fcd34d;
+        --success-bg: rgba(22, 163, 74, 0.1);
+        --danger-bg: rgba(220, 38, 38, 0.1);
+      }
+
+      [data-theme="dark"] body { background: var(--bg); color: var(--text); }
+      [data-theme="dark"] .topbar { background: rgba(11, 17, 33, 0.88); border-bottom-color: var(--border); }
+      [data-theme="dark"] .nav-toggle { background: var(--surface); border-color: var(--border); }
+      [data-theme="dark"] .nav-toggle-lines span { background: var(--text); }
+      [data-theme="dark"] .nav-link:hover,
+      [data-theme="dark"] .nav-link:focus-visible { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+      [data-theme="dark"] .nav-links { background: var(--bg); border-color: var(--border); }
+      [data-theme="dark"] input,
+      [data-theme="dark"] select,
+      [data-theme="dark"] textarea { background: var(--bg); color: var(--text); border-color: var(--border); }
+      [data-theme="dark"] input::placeholder,
+      [data-theme="dark"] textarea::placeholder { color: var(--muted); }
+      [data-theme="dark"] .btn-secondary,
+      [data-theme="dark"] .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+      [data-theme="dark"] .btn-secondary:hover,
+      [data-theme="dark"] .btn-ghost:hover { background: #1a2640; }
+      [data-theme="dark"] .flow-tag { background: rgba(37, 99, 235, 0.15); color: #93c5fd; }
+      [data-theme="dark"] .eyebrow { background: rgba(37, 99, 235, 0.15); color: #93c5fd; }
+      [data-theme="dark"] .badge.pending { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+      [data-theme="dark"] .badge.active { background: rgba(22, 163, 74, 0.15); color: #4ade80; }
+      [data-theme="dark"] .brand-mark { background: var(--accent); }
+      [data-theme="dark"] .brand-mark svg path { fill: white; }
+      [data-theme="dark"] .tab-btn { color: var(--muted); }
+      [data-theme="dark"] .tab-btn.active { color: var(--text); }
+      [data-theme="dark"] .tab-btn.active::after { background: var(--accent); }
+      [data-theme="dark"] .tab-btn:hover { color: var(--text); }
+      [data-theme="dark"] .notice { background: rgba(251, 191, 36, 0.1); border-left-color: #f59e0b; color: #fcd34d; }
+      [data-theme="dark"] .config-notice { background: rgba(255, 255, 255, 0.04); border-left-color: var(--muted); color: var(--muted); }
+      [data-theme="dark"] .bar-fill { background: var(--accent); }
+      [data-theme="dark"] .empty-state,
+      [data-theme="dark"] .loading-state { color: var(--muted); }
+      [data-theme="dark"] dt { color: var(--muted); }
+      [data-theme="dark"] #calendar-feed-url { background: var(--bg); color: var(--text); }
+      [data-theme="dark"] .site-footer { background: #080e1a; border-top-color: var(--border); }
+      [data-theme="dark"] .footer-link { color: var(--muted); }
+      [data-theme="dark"] .footer-link:hover { color: var(--text); }
+      [data-theme="dark"] .toast { background: #1e293b; color: var(--text); border-color: var(--border); }
+      [data-theme="dark"] .nav-link.cta { background: var(--accent); color: #fff; }
+      [data-theme="dark"] .nav-link.cta:hover { background: var(--accent-dark); }
+      [data-theme="dark"] .intro-item { background: var(--surface); border-color: var(--border); color: var(--text); }
+      [data-theme="dark"] .category-social { background: rgba(37, 99, 235, 0.15); color: #93c5fd; }
+      [data-theme="dark"] .category-academic { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+      [data-theme="dark"] .category-sports { background: rgba(22, 163, 74, 0.15); color: #4ade80; }
+      [data-theme="dark"] .category-arts { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+      [data-theme="dark"] .category-volunteer { background: rgba(132, 204, 22, 0.15); color: #b8d96a; }
+      [data-theme="dark"] .category-meeting,
+      [data-theme="dark"] .category-other { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
+
+      .theme-toggle { padding: 10px 12px; }
+      .theme-toggle .icon-sun { display: none; }
+      .theme-toggle .icon-moon { display: block; }
+      [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+      [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      button, input, select, textarea { font: inherit; }
+      img, svg { display: block; }
+      [hidden] { display: none !important; }
+
+      .shell { min-height: 100vh; position: relative; overflow-x: clip; }
+
+      .container { width: min(var(--max), calc(100vw - 40px)); margin: 0 auto; }
+
+      .topbar {
+        position: sticky; top: 0; z-index: 50;
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        background: rgba(248, 250, 252, 0.85);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .topbar-inner {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 20px; padding: 14px 0; position: relative;
+      }
+
+      .brand {
+        display: inline-flex; align-items: center; gap: 10px;
+        color: var(--navy); font-weight: 800; letter-spacing: -0.03em; z-index: 3;
+      }
+
+      .brand-mark {
+        width: 36px; height: 36px; border-radius: 8px;
+        background: var(--navy); color: white;
+        display: grid; place-items: center;
+        transition: transform 200ms ease;
+      }
+
+      .brand:hover .brand-mark { transform: scale(1.05); }
+
+      .brand-name { font-size: 1.05rem; }
+
+      .nav-toggle {
+        width: 42px; height: 42px; border-radius: 8px;
+        border: 1px solid var(--border); background: white;
+        display: none; align-items: center; justify-content: center;
+        cursor: pointer; z-index: 3;
+      }
+
+      .nav-toggle-lines { width: 18px; height: 12px; position: relative; }
+      .nav-toggle-lines span {
+        position: absolute; left: 0; width: 100%; height: 2px;
+        border-radius: 2px; background: var(--navy);
+        transition: transform 200ms ease, opacity 200ms ease, top 200ms ease;
+      }
+      .nav-toggle-lines span:nth-child(1) { top: 0; }
+      .nav-toggle-lines span:nth-child(2) { top: 5px; }
+      .nav-toggle-lines span:nth-child(3) { top: 10px; }
+      .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(1) { top: 5px; transform: rotate(45deg); }
+      .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(2) { opacity: 0; }
+      .nav-toggle[aria-expanded="true"] .nav-toggle-lines span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
+
+      .nav-links {
+        display: flex; align-items: center; gap: 4px;
+        flex-wrap: wrap; justify-content: flex-end;
+      }
+
+      .nav-link {
+        padding: 9px 14px; border-radius: 6px;
+        color: var(--muted); transition: 160ms ease; font-weight: 500; font-size: 0.925rem;
+      }
+
+      .nav-link:hover,
+      .nav-link:focus-visible { background: var(--accent-subtle); color: var(--accent); outline: none; }
+
+      .nav-link.cta {
+        background: var(--navy); color: white; font-weight: 600;
+        padding: 9px 18px; border-radius: 8px;
+      }
+
+      .nav-link.cta:hover { background: var(--navy-2); }
+
+      main { padding: 16px 0 60px; }
+
+      .view {
+        display: none; opacity: 0; transform: translateY(10px);
+        transition: opacity 300ms ease, transform 300ms ease;
+      }
+      .view.active { display: block; }
+      .view.visible { opacity: 1; transform: translateY(0); }
+
+      .hero {
+        padding: 48px 0 32px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+        gap: 36px; align-items: center;
+      }
+
+      .hero-copy { padding: 4px 0; }
+
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px; border-radius: 6px;
+        background: var(--accent-subtle); color: var(--accent);
+        font-size: 0.82rem; font-weight: 600; margin-bottom: 20px;
+        letter-spacing: 0.02em;
+      }
+
+      .hero-title, .section-title, .view h2, .dashboard-title {
+        line-height: 1.08; letter-spacing: -0.03em; margin: 0; color: var(--navy);
+      }
+
+      .hero-panel-title { color: white !important; }
+
+      .hero-title { font-size: clamp(2.4rem, 5vw, 3.8rem); max-width: 12ch; }
+
+      .hero-copy p, .section-subtitle, .muted { color: var(--muted); line-height: 1.7; font-size: 0.95rem; }
+
+      .hero-copy p { font-size: 1.05rem; margin: 16px 0 20px; max-width: 60ch; line-height: 1.75; }
+
+      .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+
+      .hero-search-panel,
+      .hero-panel,
+      .card,
+      .panel,
+      .form-shell,
+      .club-card,
+      .preview-card,
+      .event-card,
+      .settings-card,
+      .insights-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow);
+      }
+
+      .hero-search-panel {
+        padding: 20px 22px; margin-bottom: 20px;
+        transition: box-shadow 200ms ease;
+      }
+
+      .hero-search-panel:focus-within { box-shadow: var(--shadow-md); }
+
+      .hero-search-label {
+        font-size: 0.9rem; font-weight: 700; color: var(--navy);
+        margin-bottom: 12px; letter-spacing: -0.01em;
       }
 
       .hero-panel {
-        min-height: auto;
-      }
-    }
-
-    @media (max-width: 860px) {
-      .hero {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .nav-toggle {
-        display: inline-flex;
+        padding: 32px; position: relative; overflow: hidden;
+        min-height: 380px;
+        background: linear-gradient(160deg, #0f172a 0%, #1a2a4a 50%, #0f172a 100%);
+        color: white;
       }
 
-      .nav-links {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        right: 0;
-        display: none;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-        padding: 14px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.94);
-        border: 1px solid rgba(15, 27, 53, 0.08);
-        box-shadow: 0 18px 36px rgba(15, 27, 53, 0.12);
+      .hero-panel::before {
+        content: ""; position: absolute;
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
+        top: -100px; right: -80px;
       }
 
-      .nav-links.open {
-        display: flex;
+      .panel-chip {
+        display: inline-flex; padding: 6px 12px; border-radius: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.78rem; font-weight: 600; margin-bottom: 24px;
+        letter-spacing: 0.02em; text-transform: uppercase;
       }
 
-      .nav-link,
-      .nav-link.cta {
-        width: 100%;
-        justify-content: center;
+      .hero-panel-title {
+        font-size: 1.75rem; color: white; margin: 0 0 12px;
+        position: relative; z-index: 1; line-height: 1.25;
       }
-    }
 
-    @media (max-width: 760px) {
-      .topbar-inner,
-      .dashboard-head,
+      .hero-panel-copy {
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.7; max-width: 30ch; margin: 0;
+        position: relative; z-index: 1; font-size: 0.92rem;
+      }
+
+      .hero-stats {
+        display: grid; gap: 10px; position: relative;
+        z-index: 1; margin-top: 32px;
+      }
+
+      .stat-row {
+        display: grid; grid-template-columns: 56px 1fr;
+        gap: 14px; align-items: center; padding: 14px;
+        border-radius: 8px; background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: background 200ms ease;
+      }
+
+      .stat-row:hover { background: rgba(255, 255, 255, 0.07); }
+
+      .stat-row strong { font-size: 1.4rem; letter-spacing: -0.04em; font-weight: 700; }
+
+      .stat-title { font-weight: 700; margin-bottom: 2px; font-size: 0.9rem; }
+
+      .stat-copy { color: rgba(255, 255, 255, 0.6); font-size: 0.82rem; line-height: 1.5; }
+
+      .social-proof {
+        text-align: center; padding: 8px 0 40px;
+        color: var(--muted); font-size: 0.95rem; line-height: 1.7;
+        max-width: 56ch; margin: 0 auto;
+      }
+
+      .section { padding: 40px 0; }
+
       .section-head {
-        align-items: start;
+        display: flex; align-items: end; justify-content: space-between;
+        gap: 16px; margin-bottom: 28px;
       }
 
-      .field-row {
-        grid-template-columns: 1fr;
+      .section-head.compact { margin-bottom: 20px; }
+
+      .section-title { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+
+      .flow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+      .card, .panel, .form-shell, .preview-card, .event-card, .club-card, .settings-card, .insights-card {
+        padding: 24px; transition: box-shadow 200ms ease;
       }
 
-      .settings-calendar-actions .btn,
-      #copy-calendar-link-btn {
-        width: 100%;
+      .card:hover, .club-card:hover, .event-card:hover, .preview-card:hover, .insights-card:hover {
+        box-shadow: var(--shadow-md);
       }
 
-      .settings-card dl {
-        grid-template-columns: 1fr;
-        gap: 6px;
+      .flow-tag, .badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 6px 10px; border-radius: 6px;
+        font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
+        line-height: 1;
       }
 
-      .hero {
-        padding-top: 32px;
+      .flow-tag { background: var(--accent-subtle); color: var(--accent); margin-bottom: 14px; }
+      .flow-tag.inverse { background: rgba(255, 255, 255, 0.1); color: white; }
+
+      .card-heading, .preview-heading, .settings-heading, .admin-heading, .event-heading { margin: 0; color: var(--navy); }
+
+      .card-heading, .settings-heading { font-size: 1.15rem; }
+      .preview-heading { font-size: 1.2rem; }
+      .event-heading { font-size: 1.05rem; margin-bottom: 6px; font-weight: 700; }
+
+      .card-text-top { margin: 0 0 8px; }
+      .helper-row { margin-top: 18px; }
+      .helper-link { color: var(--accent); font-weight: 600; transition: opacity 160ms ease; }
+      .helper-link:hover { opacity: 0.8; }
+
+      .btn {
+        border: 0; cursor: pointer; border-radius: 8px;
+        padding: 11px 18px; font-weight: 600; font-size: 0.9rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 8px; transition: all 180ms ease;
+        box-shadow: var(--shadow-sm);
       }
 
-      .panel,
-      .form-shell,
-      .preview-card,
-      .event-card,
-      .club-card,
-      .intro-panel,
-      .hero-panel,
-      .hero-search-panel,
-      .settings-card,
-      .insights-card {
-        padding: 20px;
+      .btn:active { transform: scale(0.98); }
+
+      .btn:focus-visible,
+      input:focus-visible, select:focus-visible, textarea:focus-visible {
+        outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      }
+
+      .btn-primary { background: var(--accent); color: white; }
+      .btn-primary:hover { background: var(--accent-dark); box-shadow: var(--shadow-md); }
+
+      .btn-secondary {
+        background: var(--surface); color: var(--navy);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover { background: var(--border-light); }
+
+      .btn-small { padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; }
+
+      .btn-danger { background: var(--danger); color: white; border: 1px solid var(--danger); box-shadow: none; }
+      .btn-danger:hover { background: #b91c1c; }
+
+      .btn-ghost {
+        background: transparent; color: var(--muted);
+        border: 1px solid var(--border); box-shadow: none;
+      }
+
+      .btn-ghost:hover { background: var(--border-light); color: var(--navy); }
+
+      .btn-danger:focus-visible,
+      .btn-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: none; }
+
+      .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+      .split-view, .dashboard-layout { display: grid; gap: 28px; }
+
+      .split-view {
+        grid-template-columns: minmax(0, 0.9fr) minmax(340px, 1.1fr);
+        align-items: start; padding: 32px 0 12px;
+      }
+
+      .intro-panel {
+        padding: 28px; border-radius: var(--radius-lg);
+        background: linear-gradient(160deg, var(--surface), var(--bg));
+        color: var(--text); min-height: 100%; border: 1px solid var(--border);
+      }
+
+      .intro-panel h2 {
+        color: var(--navy); font-size: clamp(1.6rem, 3vw, 2.1rem);
+        margin: 0 0 14px; line-height: 1.15;
+      }
+
+      .intro-panel p { color: var(--muted); line-height: 1.7; max-width: 36ch; margin: 0; font-size: 0.95rem; }
+
+      .intro-list { display: grid; gap: 12px; margin-top: 28px; }
+      .intro-item {
+        padding: 16px; border-radius: 8px;
+        background: var(--surface); border: 1px solid var(--border-light);
+        font-size: 0.9rem; line-height: 1.6;
+      }
+
+      .form-shell h2, .panel h2, .dashboard-title { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 8px; }
+
+      .form { display: grid; gap: 18px; margin-top: 18px; }
+      .field, .field-row { display: grid; gap: 8px; }
+      .field-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+      label { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+      .label-note { color: var(--muted); font-weight: 400; margin-left: 6px; }
+
+      input, select, textarea {
+        width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+        padding: 11px 14px; background: var(--surface); color: var(--text);
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+      }
+
+      textarea { min-height: 120px; resize: vertical; }
+
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .error { font-size: 0.82rem; color: var(--danger); min-height: 1em; }
+
+      .notice {
+        border-radius: 8px; padding: 14px 16px;
+        background: var(--amber); color: var(--amber-text);
+        border: 1px solid rgba(124, 90, 6, 0.12);
+        border-left: 3px solid #f59e0b; line-height: 1.6; font-size: 0.9rem;
+      }
+
+      .config-notice { background: rgba(15, 27, 53, 0.04); border-left-color: var(--muted); color: var(--muted); }
+
+      .success-panel {
+        display: none; margin-top: 24px; padding: 32px;
+        border-radius: var(--radius-lg); background: var(--success-bg);
+        border: 1px solid rgba(22, 163, 74, 0.15); text-align: center;
+        backdrop-filter: blur(8px);
+      }
+      .success-panel.visible { display: block; animation: fadeUp 300ms ease; }
+
+      .checkmark-wrap {
+        width: 64px; height: 64px; margin: 0 auto 16px;
+        border-radius: 999px; display: grid; place-items: center;
+        background: rgba(22, 163, 74, 0.1);
+      }
+
+      .checkmark circle, .checkmark path { stroke: var(--success); stroke-width: 5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .checkmark circle { stroke-dasharray: 120; stroke-dashoffset: 120; animation: drawCheck 700ms ease forwards; }
+      .checkmark path { stroke-dasharray: 120; stroke-dashoffset: 120; animation: drawCheck 700ms ease forwards 150ms; }
+
+      .success-title { margin: 0 0 6px; color: var(--success); font-size: 1.2rem; }
+      .success-copy { margin: 0 0 10px; }
+
+      .dashboard-layout { grid-template-columns: 1fr; padding: 20px 0; }
+
+      .dashboard-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+      }
+
+      .dashboard-subtitle { margin: 8px 0 0; }
+
+      .badge { min-height: 28px; gap: 4px; }
+      .badge.pending { background: var(--amber); color: var(--amber-text); }
+      .badge.active { background: var(--success-bg); color: var(--success); }
+      .badge.stale { background: rgba(15, 27, 53, 0.06); color: var(--muted); }
+
+      .dashboard-tabs {
+        display: flex; gap: 0; margin-bottom: 24px;
+        position: relative; flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .tab-btn {
+        background: transparent; color: var(--muted);
+        border: 0; padding: 12px 18px; font-weight: 600;
+        cursor: pointer; position: relative; margin-bottom: -1px;
+        font-size: 0.9rem; transition: color 180ms ease;
+      }
+
+      .tab-btn:hover { color: var(--navy); }
+
+      .tab-btn.active { color: var(--accent); }
+
+      .tab-btn.active::after {
+        content: ""; position: absolute; left: 18px; right: 18px;
+        bottom: 0; height: 2px; border-radius: 2px 2px 0 0;
+        background: var(--accent);
+        animation: tabSlide 200ms ease;
+      }
+
+      .tab-panel { display: none; }
+      .tab-panel.active { display: block; animation: fadeUp 200ms ease; }
+
+      .create-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+        gap: 24px; align-items: start;
+      }
+
+      .preview-meta, .event-meta, .club-meta, .settings-meta { display: grid; gap: 8px; margin-top: 16px; }
+
+      .meta-line { display: flex; gap: 10px; color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
+      .meta-line strong { color: var(--navy); min-width: 90px; font-size: 0.85rem; font-weight: 600; }
+
+      .calendar-pulse { animation: pulse 400ms ease; }
+
+      .event-grid, .club-grid, .insights-grid { display: grid; gap: 16px; }
+      .club-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+      .event-actions, .club-actions, .settings-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+      .settings-calendar-row { align-items: end; }
+
+      .calendar-card {
+        border: 1px solid var(--border); border-radius: var(--radius-md);
+        padding: 18px 20px; margin-bottom: 12px;
+        transition: box-shadow 200ms ease;
+      }
+
+      .calendar-card:hover { box-shadow: var(--shadow-sm); }
+
+      .calendar-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+      .calendar-card-head strong { font-size: 1rem; color: var(--navy); }
+
+      .btn-danger { color: var(--danger); }
+      .btn-danger:hover { background: var(--danger-bg); }
+
+      .settings-calendar-actions .btn { min-height: 40px; }
+
+      #calendar-feed-url { font-size: 0.92rem; color: var(--navy); background: var(--bg); }
+
+      .empty-state {
+        padding: 32px 24px; border-radius: var(--radius);
+        background: var(--bg); border: 1px dashed var(--border);
+        color: var(--muted); text-align: center; font-size: 0.9rem; line-height: 1.6;
+      }
+
+      .settings-card dl { display: grid; grid-template-columns: 120px 1fr; gap: 12px 16px; margin: 16px 0 24px; }
+      .settings-card dt { font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+      .settings-card dd { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      .settings-form[hidden] { display: none !important; }
+
+      .discovery-layout { padding: 20px 0; display: grid; gap: 24px; }
+
+      .search-shell { position: relative; }
+
+      .search-input {
+        padding-right: 46px; height: 52px; border-radius: var(--radius);
+        background: var(--surface); font-size: 0.95rem;
+        transition: box-shadow 200ms ease;
+      }
+
+      .search-input:focus { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+      .search-icon {
+        position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+        color: var(--muted-light); pointer-events: none;
+      }
+
+      .suggestions {
+        position: absolute; left: 0; right: 0;
+        top: calc(100% + 6px); background: var(--surface);
+        border-radius: var(--radius); border: 1px solid var(--border);
+        box-shadow: var(--shadow-lg); overflow: hidden;
+        display: none; z-index: 20;
+      }
+      .suggestions.visible { display: block; animation: fadeUp 150ms ease; }
+
+      .suggestion {
+        width: 100%; background: transparent; border: 0;
+        cursor: pointer; text-align: left; padding: 12px 16px;
+        color: var(--text); transition: background 120ms ease; font-size: 0.9rem;
+      }
+
+      .suggestion:hover,
+      .suggestion:focus-visible { background: var(--accent-subtle); color: var(--accent); outline: none; }
+
+      .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+      .filter-chip {
+        border: 1px solid var(--border); background: var(--surface);
+        color: var(--muted); padding: 8px 14px; border-radius: 6px;
+        cursor: pointer; font-weight: 600; font-size: 0.85rem;
+        transition: all 160ms ease;
+      }
+
+      .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+      .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+      .club-card { background: var(--surface); }
+
+      .club-top { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+      .club-count { color: var(--muted); font-weight: 600; white-space: nowrap; font-size: 0.85rem; }
+
+      .club-card p { color: var(--muted); line-height: 1.6; margin: 0 0 16px; font-size: 0.9rem; }
+
+      .event-preview {
+        padding: 14px; border-radius: var(--radius);
+        background: var(--bg); border: 1px solid var(--border-light);
+        margin-bottom: 12px;
+      }
+
+      .event-preview-title { font-weight: 700; color: var(--navy); margin-bottom: 4px; font-size: 0.9rem; }
+      .event-preview-copy { color: var(--muted); font-size: 0.85rem; }
+
+      .club-events-expanded { display: grid; gap: 10px; margin-top: 12px; }
+
+      .mini-event {
+        padding: 12px; border-radius: var(--radius);
+        background: var(--bg); border: 1px solid var(--border-light);
+        color: var(--muted); line-height: 1.5; font-size: 0.88rem;
+      }
+
+      .mini-event-title { display: block; color: var(--navy); margin-bottom: 4px; font-weight: 600; }
+
+      .last-updated { color: var(--muted); font-size: 0.88rem; margin-top: 10px; }
+      .stale-indicator { margin-top: 10px; color: var(--muted); font-size: 0.88rem; }
+
+      .insights-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 24px; gap: 16px; }
+
+      .insight-number {
+        font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800;
+        letter-spacing: -0.04em; color: var(--navy); margin: 0 0 6px;
+      }
+
+      .bar-chart {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 12px; align-items: end; min-height: 220px; margin-top: 20px;
+      }
+
+      .bar-group { display: grid; gap: 8px; align-items: end; }
+
+      .bar-track {
+        height: 160px; border-radius: 6px;
+        background: var(--bg); border: 1px solid var(--border-light);
+        display: flex; align-items: end; overflow: hidden;
+      }
+
+      .bar-fill {
+        width: 100%; background: var(--accent);
+        border-radius: 6px 6px 0 0; height: 0;
+        transition: height 300ms ease; min-height: 0;
+      }
+
+      .bar-label { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+      .bar-value { font-weight: 700; color: var(--navy); font-size: 0.9rem; }
+
+      .loading-state { color: var(--muted); text-align: center; padding: 32px 12px; }
+
+      .toast-region {
+        position: fixed; right: 16px; bottom: 16px;
+        z-index: 60; display: grid; gap: 8px;
+        width: min(340px, calc(100vw - 24px));
+      }
+
+      .toast {
+        background: var(--surface); color: var(--text);
+        border-radius: var(--radius); padding: 14px 16px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+        animation: toastIn 220ms ease, toastOut 220ms ease 3.4s forwards;
+        font-size: 0.9rem;
+      }
+
+      .toast strong { display: block; margin-bottom: 4px; font-weight: 600; }
+
+      .site-footer {
+        border-top: 1px solid var(--border);
+        background: rgba(248, 250, 252, 0.8);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        margin-top: 40px;
       }
 
       .site-footer-inner {
-        align-items: start;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 18px; padding: 20px 0 24px; flex-wrap: wrap;
       }
-    }
 
-    /* Dark mode overrides that must come after base styles */
-    [data-theme="dark"] .nav-link.cta {
-      background: var(--coral);
-      color: #ffffff;
-    }
+      .footer-links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+      .footer-link { color: var(--muted); font-weight: 500; font-size: 0.9rem; transition: color 160ms ease; }
+      .footer-link:hover, .footer-link:focus-visible { color: var(--navy); outline: none; }
 
-    [data-theme="dark"] .nav-link.cta:hover,
-    [data-theme="dark"] .nav-link.cta:focus-visible {
-      background: var(--coral-dark);
-    }
+      .category-social { background: #dbeafe; color: #1d4ed8; }
+      .category-academic { background: #f1f5f9; color: #475569; }
+      .category-sports { background: #dcfce7; color: #166534; }
+      .category-arts { background: #ede9fe; color: #5b21b6; }
+      .category-volunteer { background: #ecfccb; color: #3f6212; }
+      .category-meeting, .category-other { background: #f1f5f9; color: #475569; }
 
-    [data-theme="dark"] .intro-item {
-      background: #1e293b;
-      color: var(--text);
-    }
-  </style>
-</head>
-<body>
-  <div class="shell">
-    <header class="topbar">
-      <div class="container topbar-inner">
-        <a href="#" class="brand" data-route="landing" aria-label="Club Cal home">
-          <span class="brand-mark" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="5.5" width="17" height="15" rx="3" stroke="white" stroke-width="2"></rect>
-              <path d="M7 3.5V7.5M17 3.5V7.5M3.5 10.5H20.5" stroke="white" stroke-width="2" stroke-linecap="round"></path>
-            </svg>
-          </span>
-          <span class="brand-name">Club Cal</span>
-        </a>
+      .animate-sequence { opacity: 0; transform: translateY(14px); animation: fadeUp 600ms ease forwards; }
+      .delay-1 { animation-delay: 80ms; }
+      .delay-2 { animation-delay: 180ms; }
+      .delay-3 { animation-delay: 280ms; }
 
-        <button id="nav-toggle" class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-links">
-          <span class="nav-toggle-lines" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+      @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+      @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
+      @keyframes tabSlide { from { transform: scaleX(0.6); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
 
-        <nav id="nav-links" class="nav-links" aria-label="Primary">
-          <a id="nav-dashboard-link" class="nav-link" href="#" data-route="dashboard" hidden>My Club</a>
-          <a class="nav-link" href="#" data-route="signup">For Clubs</a>
-          <a class="nav-link" href="#" data-route="discovery">Find Events</a>
-          <a class="nav-link" href="#" data-route="signin">Sign In</a>
-          <button id="theme-toggle" class="nav-link theme-toggle" type="button" aria-label="Toggle dark mode">
-            <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      @media (max-width: 1080px) {
+        .split-view, .create-grid, .club-grid, .flow-grid, .insights-grid { grid-template-columns: 1fr; }
+        .hero-title { max-width: 12ch; }
+        .hero-panel { min-height: auto; }
+      }
+
+      @media (max-width: 860px) {
+        .hero { grid-template-columns: 1fr; }
+        .hero { padding-top: 32px; }
+        .hero-panel { min-height: 260px; padding: 24px; }
+      }
+
+      @media (max-width: 768px) {
+        .nav-toggle { display: inline-flex; }
+        .nav-links {
+          position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+          display: none; flex-direction: column; align-items: stretch; gap: 4px;
+          padding: 12px; border-radius: var(--radius-lg);
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-lg); backdrop-filter: blur(16px);
+        }
+        .nav-links.open { display: flex; }
+        .nav-link, .nav-link.cta { width: 100%; justify-content: center; }
+      }
+
+      @media (max-width: 640px) {
+        .topbar-inner, .dashboard-head, .section-head { align-items: start; }
+        .field-row { grid-template-columns: 1fr; }
+        .settings-calendar-actions .btn, #copy-calendar-link-btn { width: 100%; }
+        .settings-card dl { grid-template-columns: 1fr; gap: 4px; }
+        .panel, .form-shell, .preview-card, .event-card, .club-card,
+        .intro-panel, .hero-panel, .hero-search-panel,
+        .settings-card, .insights-card { padding: 18px; }
+        .site-footer-inner { align-items: start; }
+        .hero { padding-top: 24px; }
+        .insights-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="container topbar-inner">
+          <a href="#" class="brand" data-route="landing" aria-label="Club Cal home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <rect x="3.5" y="5.5" width="17" height="15" rx="3" stroke="white" stroke-width="2"></rect>
+                <path
+                  d="M7 3.5V7.5M17 3.5V7.5M3.5 10.5H20.5"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                ></path>
+              </svg>
+            </span>
+            <span class="brand-name">Club Cal</span>
+          </a>
+
+          <button
+            id="nav-toggle"
+            class="nav-toggle"
+            type="button"
+            aria-label="Toggle navigation"
+            aria-expanded="false"
+            aria-controls="nav-links"
+          >
+            <span class="nav-toggle-lines" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
           </button>
-          <a class="nav-link cta" href="#" data-route="signup">Add Your Club</a>
-          <button id="nav-logout" class="nav-link cta" type="button" hidden>Log Out</button>
-        </nav>
-      </div>
-    </header>
 
-    <main class="container">
-      <section id="view-landing" class="view active visible" data-view="landing">
-        <div class="hero">
-          <div class="hero-copy">
-            <div class="hero-search-panel animate-sequence">
-              <div class="hero-search-label">Start with your school</div>
+          <nav id="nav-links" class="nav-links" aria-label="Primary">
+            <a id="nav-dashboard-link" class="nav-link" href="#" data-route="dashboard" hidden>My Club</a>
+            <a class="nav-link" href="#" data-route="signup">For Clubs</a>
+            <a class="nav-link" href="#" data-route="discovery">Find Events</a>
+            <a class="nav-link" href="#" data-route="signin">Sign In</a>
+            <button id="theme-toggle" class="nav-link theme-toggle" type="button" aria-label="Toggle dark mode">
+              <svg
+                class="icon-sun"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+              <svg
+                class="icon-moon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </button>
+            <a class="nav-link cta" href="#" data-route="signup">Add Your Club</a>
+            <button id="nav-logout" class="nav-link cta" type="button" hidden>Log Out</button>
+          </nav>
+        </div>
+      </header>
+
+      <main class="container">
+        <section id="view-landing" class="view active visible" data-view="landing">
+          <div class="hero">
+            <div class="hero-copy">
+              <div class="hero-search-panel animate-sequence">
+                <div class="hero-search-label">Start with your school</div>
+                <div class="search-shell">
+                  <input
+                    id="landing-school-search"
+                    class="search-input"
+                    type="text"
+                    placeholder="Search your school or university..."
+                    autocomplete="off"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                  />
+                  <div class="search-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
+                      <path d="M20 20L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                  </div>
+                  <div id="landing-suggestions" class="suggestions" role="listbox"></div>
+                </div>
+              </div>
+              <div class="eyebrow animate-sequence delay-1">Verified campus organizations</div>
+              <h1 class="hero-title animate-sequence delay-1">Campus events, in one reliable place.</h1>
+              <p class="animate-sequence delay-2">
+                Club Cal helps students find active organizations, review upcoming events, and keep their calendars
+                current without hunting across multiple platforms.
+              </p>
+              <div class="hero-actions animate-sequence delay-3">
+                <button class="btn btn-primary" data-route="discovery">Browse Events</button>
+                <button class="btn btn-secondary" data-route="signup">Add your club</button>
+              </div>
+            </div>
+
+            <aside class="hero-panel">
+              <div class="panel-chip">Campus-wide visibility</div>
+              <h2 class="hero-panel-title">From the first week to finals, keep the calendar current.</h2>
+              <p class="hero-panel-copy">
+                Students get one dependable place to check what is happening. Clubs get a clear home for event
+                publishing, updates, and calendar subscriptions.
+              </p>
+              <div class="hero-stats">
+                <div class="stat-row">
+                  <strong>1 tap</strong>
+                  <div>
+                    <div class="stat-title">Subscribe or save</div>
+                    <div class="stat-copy">Use calendar tools students already rely on every day.</div>
+                  </div>
+                </div>
+                <div class="stat-row">
+                  <strong>Daily</strong>
+                  <div>
+                    <div class="stat-title">Regular discovery</div>
+                    <div class="stat-copy">Search by school, filter by category, and check what is new.</div>
+                  </div>
+                </div>
+                <div class="stat-row">
+                  <strong>Proof</strong>
+                  <div>
+                    <div class="stat-title">Club insights</div>
+                    <div class="stat-copy">
+                      Track calendar activity with numbers you can use in club planning and reporting.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <section class="social-proof">
+            Built to be a dependable event platform for student organizations and the students who follow them.
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">
+                  Students get a dependable way to check what is happening. Clubs get one place to publish and maintain
+                  events.
+                </p>
+              </div>
+            </div>
+            <div class="flow-grid">
+              <article class="card">
+                <div class="flow-tag">For Clubs</div>
+                <h3 class="card-heading">Publish events in one place.</h3>
+                <div class="event-meta">
+                  <div class="meta-line">
+                    <strong>1</strong><span>Register with your school and wait for review.</span>
+                  </div>
+                  <div class="meta-line">
+                    <strong>2</strong
+                    ><span>Create events with the essentials and optional details when you have them.</span>
+                  </div>
+                  <div class="meta-line">
+                    <strong>3</strong><span>Track calendar downloads and keep listings current for students.</span>
+                  </div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="flow-tag">For Students</div>
+                <h3 class="card-heading">Check what is happening across campus.</h3>
+                <div class="event-meta">
+                  <div class="meta-line">
+                    <strong>1</strong><span>Search your school and see active organizations immediately.</span>
+                  </div>
+                  <div class="meta-line">
+                    <strong>2</strong><span>Filter by category and review current event listings.</span>
+                  </div>
+                  <div class="meta-line">
+                    <strong>3</strong
+                    ><span>Subscribe to club calendars or save individual events without an account.</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-signup" class="view" data-view="signup">
+          <div class="split-view">
+            <aside class="intro-panel">
+              <div class="flow-tag inverse">Club Registration</div>
+              <h2>Add your club to the campus event platform.</h2>
+              <p>
+                Create your club profile, complete verification, and start publishing events students can reliably find
+                and follow.
+              </p>
+              <div class="intro-list">
+                <div class="intro-item">
+                  <strong>Verified access</strong><br />Every club is reviewed before activation.
+                </div>
+                <div class="intro-item">
+                  <strong>Calendar reach</strong><br />Track how many students save your events.
+                </div>
+                <div class="intro-item">
+                  <strong>Central workflow</strong><br />Manage events and reporting in one dashboard.
+                </div>
+              </div>
+            </aside>
+
+            <div class="form-shell">
+              <h2>Add your club</h2>
+              <p class="muted">
+                Create a club account. Your status will remain pending until verification is complete.
+              </p>
+              <div id="supabase-config-signup" class="notice config-notice" hidden>
+                Add your Supabase URL and anon key in the script config block before using sign up or sign in.
+              </div>
+              <form id="signup-form" class="form" novalidate>
+                <div class="field">
+                  <label for="signup-club-name">Club Name</label>
+                  <input id="signup-club-name" name="clubName" type="text" autocomplete="organization" />
+                  <div class="error" data-error-for="clubName"></div>
+                </div>
+                <div class="field">
+                  <label for="signup-school">University / School</label>
+                  <div class="search-shell">
+                    <input
+                      id="signup-school"
+                      class="search-input"
+                      name="school"
+                      type="text"
+                      autocomplete="off"
+                      aria-autocomplete="list"
+                      aria-expanded="false"
+                      placeholder="Start typing your school name..."
+                    />
+                    <div id="signup-school-suggestions" class="suggestions" role="listbox"></div>
+                  </div>
+                  <div class="error" data-error-for="school"></div>
+                </div>
+                <div class="field">
+                  <label for="signup-email">Email Address</label>
+                  <input id="signup-email" name="email" type="email" autocomplete="email" />
+                  <div class="error" data-error-for="email"></div>
+                </div>
+                <div class="field">
+                  <label for="signup-password">Password</label>
+                  <input
+                    id="signup-password"
+                    name="password"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                  />
+                  <div class="error" data-error-for="password"></div>
+                </div>
+                <div class="notice">
+                  Your registration will be reviewed before your account is activated. We manually verify all clubs to
+                  ensure only real, legitimate organizations can post events.
+                </div>
+                <button class="btn btn-primary" type="submit">Submit for Review</button>
+              </form>
+              <div id="signup-success" class="success-panel" aria-live="polite">
+                <div class="checkmark-wrap">
+                  <svg class="checkmark" width="48" height="48" viewBox="0 0 52 52" aria-hidden="true">
+                    <circle cx="26" cy="26" r="22"></circle>
+                    <path d="M16 27L23 34L36 19"></path>
+                  </svg>
+                </div>
+                <h3 class="success-title">Application submitted!</h3>
+                <p id="signup-success-text" class="muted success-copy"></p>
+                <a href="#" class="helper-link" data-route="landing">Back to home</a>
+              </div>
+              <p class="helper-row">
+                <a class="helper-link" href="#" data-route="signin">Already approved? Sign in</a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-signin" class="view" data-view="signin">
+          <div class="split-view">
+            <aside class="intro-panel">
+              <div class="flow-tag inverse">Club Access</div>
+              <h2>Sign in to manage your club calendar.</h2>
+              <p>Access your dashboard to publish events, review analytics, and keep your club profile up to date.</p>
+            </aside>
+
+            <div class="form-shell">
+              <h2>Sign in</h2>
+              <p class="muted">Use the same email and password you used during registration.</p>
+              <div id="supabase-config-signin" class="notice config-notice" hidden>
+                Add your Supabase URL and anon key in the script config block before using sign up or sign in.
+              </div>
+              <form id="signin-form" class="form" novalidate>
+                <div class="field">
+                  <label for="signin-email">Email Address</label>
+                  <input id="signin-email" name="email" type="email" autocomplete="email" />
+                  <div class="error" data-error-for="signinEmail"></div>
+                </div>
+                <div class="field">
+                  <label for="signin-password">Password</label>
+                  <input id="signin-password" name="password" type="password" autocomplete="current-password" />
+                  <div class="error" data-error-for="signinPassword"></div>
+                </div>
+                <button class="btn btn-primary" type="submit">Sign In</button>
+              </form>
+              <p class="helper-row"><a class="helper-link" href="#" data-route="signup">New club? Add it here</a></p>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-dashboard" class="view" data-view="dashboard">
+          <div class="dashboard-layout">
+            <div class="dashboard-head">
+              <div>
+                <h2 class="dashboard-title" id="dashboard-title">Welcome back, Club</h2>
+                <p class="muted dashboard-subtitle">
+                  Manage events, review calendar activity, and keep your club information current.
+                </p>
+              </div>
+              <div id="account-badge" class="badge pending">Pending</div>
+            </div>
+
+            <div class="panel">
+              <div class="dashboard-tabs" role="tablist" aria-label="Club dashboard tabs">
+                <button class="tab-btn active" type="button" data-tab="events">My Events</button>
+                <button class="tab-btn" type="button" data-tab="create">Create Event</button>
+                <button class="tab-btn" type="button" data-tab="calendars">Calendars</button>
+                <button class="tab-btn" type="button" data-tab="insights">Insights</button>
+                <button class="tab-btn" type="button" data-tab="settings">Settings</button>
+              </div>
+
+              <section class="tab-panel active" data-tab-panel="events">
+                <div id="events-list" class="event-grid"></div>
+              </section>
+
+              <section class="tab-panel" data-tab-panel="create">
+                <div class="create-grid">
+                  <form id="event-form" class="form" novalidate>
+                    <div class="field">
+                      <label for="event-title">Event Title</label>
+                      <input id="event-title" name="title" type="text" />
+                      <div class="error" data-error-for="title"></div>
+                    </div>
+                    <div class="field">
+                      <label for="event-date">Date</label>
+                      <input id="event-date" name="date" type="date" />
+                      <div class="error" data-error-for="date"></div>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="event-start-time">Start Time</label>
+                        <input id="event-start-time" name="startTime" type="time" />
+                        <div class="error" data-error-for="startTime"></div>
+                      </div>
+                      <div class="field">
+                        <label for="event-end-time">End Time</label>
+                        <input id="event-end-time" name="endTime" type="time" />
+                        <div class="error" data-error-for="endTime"></div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="event-address">Location / Address</label>
+                      <input id="event-address" name="address" type="text" />
+                      <div class="error" data-error-for="address"></div>
+                    </div>
+                    <div class="field">
+                      <label for="event-room">Room / Building <span class="label-note">(optional)</span></label>
+                      <input id="event-room" name="room" type="text" />
+                      <div class="error" data-error-for="room"></div>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="event-attire">Attire <span class="label-note">(optional)</span></label>
+                        <select id="event-attire" name="attire">
+                          <option value="">Select attire</option>
+                          <option>Casual</option>
+                          <option>Business Casual</option>
+                          <option>Formal</option>
+                          <option>Costume/Themed</option>
+                          <option>Athletic</option>
+                          <option>No Dress Code</option>
+                        </select>
+                        <div class="error" data-error-for="attire"></div>
+                      </div>
+                      <div class="field">
+                        <label for="event-category">Event Category</label>
+                        <select id="event-category" name="category">
+                          <option value="">Select category</option>
+                          <option>Social</option>
+                          <option>Academic</option>
+                          <option>Sports</option>
+                          <option>Arts</option>
+                          <option>Volunteer</option>
+                          <option>Meeting</option>
+                          <option>Other</option>
+                        </select>
+                        <div class="error" data-error-for="category"></div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="event-calendar">Calendar <span class="label-note">(optional)</span></label>
+                      <select id="event-calendar" name="calendarId">
+                        <option value="">— No specific calendar —</option>
+                      </select>
+                      <div class="error" data-error-for="calendarId"></div>
+                    </div>
+                    <div class="field">
+                      <label for="event-description"
+                        >Description / Additional Details <span class="label-note">(optional)</span></label
+                      >
+                      <textarea id="event-description" name="description"></textarea>
+                      <div class="error" data-error-for="description"></div>
+                    </div>
+                    <div class="field">
+                      <label for="event-rsvp">RSVP Link <span class="label-note">(optional)</span></label>
+                      <input id="event-rsvp" name="rsvp" type="url" placeholder="https://" />
+                      <div class="error" data-error-for="rsvp"></div>
+                    </div>
+                    <button class="btn btn-primary" type="submit" id="create-event-submit">Publish Event</button>
+                  </form>
+
+                  <aside class="preview-card">
+                    <div class="flow-tag">Preview</div>
+                    <h3 id="preview-title" class="preview-heading">Your event title</h3>
+                    <p id="preview-description" class="muted preview-copy">
+                      Event details will appear here as students browse your club profile.
+                    </p>
+                    <div class="preview-meta">
+                      <div class="meta-line">
+                        <strong>When</strong><span id="preview-datetime">Select a date and time.</span>
+                      </div>
+                      <div class="meta-line">
+                        <strong>Where</strong><span id="preview-location">Add an address and room/building.</span>
+                      </div>
+                      <div class="meta-line">
+                        <strong>Attire</strong><span id="preview-attire">Optional attire note.</span>
+                      </div>
+                      <div class="meta-line">
+                        <strong>Category</strong><span id="preview-category">Pick a category for discovery.</span>
+                      </div>
+                      <div class="meta-line">
+                        <strong>RSVP</strong><span id="preview-rsvp">Optional RSVP link appears here.</span>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </section>
+
+              <section class="tab-panel" data-tab-panel="calendars">
+                <div class="settings-card">
+                  <div class="panel">
+                    <h3 class="settings-heading">Your Calendars</h3>
+                    <p class="muted">
+                      Create separate calendar feeds for different audiences — members only, e-board, specific sections,
+                      and more. Each calendar gets its own subscription link.
+                    </p>
+                    <form id="calendar-create-form" class="form" novalidate>
+                      <div class="field-row settings-calendar-row">
+                        <div class="field">
+                          <label for="calendar-name-input">Calendar Name</label>
+                          <input
+                            id="calendar-name-input"
+                            name="calendarName"
+                            type="text"
+                            placeholder="e.g. E-Board Only, All Members, Section A"
+                          />
+                          <div class="error" data-error-for="calendarName"></div>
+                        </div>
+                        <div class="field">
+                          <label>&nbsp;</label>
+                          <button class="btn btn-primary" type="submit">Create Calendar</button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                  <div id="calendars-list"></div>
+                </div>
+              </section>
+
+              <section class="tab-panel" data-tab-panel="insights">
+                <div class="insights-grid">
+                  <article class="insights-card">
+                    <div class="flow-tag">Total Reach</div>
+                    <p id="insights-total-downloads" class="insight-number">0</p>
+                    <p class="muted">Calendar downloads across all events.</p>
+                  </article>
+                  <article class="insights-card">
+                    <div class="flow-tag">Published Events</div>
+                    <p id="insights-event-count" class="insight-number">0</p>
+                    <p class="muted">Events currently in your dashboard.</p>
+                  </article>
+                  <article class="insights-card">
+                    <div class="flow-tag">Top Event</div>
+                    <p id="insights-top-downloads" class="insight-number">0</p>
+                    <p id="insights-top-event-label" class="muted">No event downloads yet.</p>
+                  </article>
+                </div>
+                <div class="panel">
+                  <h3 class="settings-heading">Downloads by Event</h3>
+                  <p class="muted">Review which events were most frequently added to student calendars.</p>
+                  <div id="insights-chart" class="bar-chart"></div>
+                </div>
+              </section>
+
+              <section class="tab-panel" data-tab-panel="settings">
+                <div class="settings-card">
+                  <div class="panel">
+                    <h3 class="settings-heading">Your Calendar Link</h3>
+                    <p class="muted">
+                      Share this link with students. Subscribers will automatically receive your published events and
+                      updates.
+                    </p>
+                    <div class="form">
+                      <div class="field-row settings-calendar-row">
+                        <div class="field">
+                          <label for="calendar-feed-url">Live Feed URL</label>
+                          <input id="calendar-feed-url" type="text" readonly />
+                        </div>
+                        <div class="field">
+                          <label>&nbsp;</label>
+                          <button id="copy-calendar-link-btn" class="btn btn-secondary" type="button">Copy Link</button>
+                        </div>
+                      </div>
+                      <div class="settings-actions settings-calendar-actions">
+                        <button id="google-calendar-link-btn" class="btn btn-primary btn-small" type="button">
+                          Add to Google Calendar
+                        </button>
+                        <button id="apple-calendar-link-btn" class="btn btn-ghost btn-small" type="button">
+                          Add to Apple Calendar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="dashboard-head">
+                    <div>
+                      <h3 class="settings-heading">Club Settings</h3>
+                      <p class="muted">Keep your club name and school details current.</p>
+                    </div>
+                    <button id="settings-edit-btn" class="btn btn-secondary btn-small" type="button">Edit</button>
+                  </div>
+
+                  <div id="settings-read-view">
+                    <dl>
+                      <dt>Club Name</dt>
+                      <dd id="settings-club-name">-</dd>
+                      <dt>University / School</dt>
+                      <dd id="settings-school">-</dd>
+                      <dt>Email Address</dt>
+                      <dd id="settings-email">-</dd>
+                    </dl>
+                  </div>
+
+                  <form id="settings-form" class="form settings-form" hidden novalidate>
+                    <div class="field">
+                      <label for="settings-club-name-input">Club Name</label>
+                      <input id="settings-club-name-input" name="clubName" type="text" />
+                      <div class="error" data-error-for="settingsClubName"></div>
+                    </div>
+                    <div class="field">
+                      <label for="settings-school-input">University / School</label>
+                      <input id="settings-school-input" name="school" type="text" />
+                      <div class="error" data-error-for="settingsSchool"></div>
+                    </div>
+                    <div class="field">
+                      <label for="settings-email-input">Email Address</label>
+                      <input id="settings-email-input" name="email" type="email" readonly />
+                    </div>
+                    <div class="settings-actions">
+                      <button class="btn btn-primary" type="submit">Save Changes</button>
+                      <button id="settings-cancel-btn" class="btn btn-ghost" type="button">Cancel</button>
+                    </div>
+                  </form>
+
+                  <div class="settings-actions">
+                    <button id="signout-btn" class="btn btn-secondary" type="button">Sign Out</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-discovery" class="view" data-view="discovery">
+          <div class="discovery-layout">
+            <div class="panel">
+              <div class="section-head compact">
+                <div>
+                  <h2>Find campus events</h2>
+                  <p class="section-subtitle">
+                    Search your school, filter by category, and follow the organizations you care about.
+                  </p>
+                </div>
+              </div>
               <div class="search-shell">
-                <input id="landing-school-search" class="search-input" type="text" placeholder="Search your school or university..." autocomplete="off" aria-autocomplete="list" aria-expanded="false">
+                <input
+                  id="school-search"
+                  class="search-input"
+                  type="text"
+                  placeholder="Search your school or university..."
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                />
                 <div class="search-icon" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
                     <path d="M20 20L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
                   </svg>
                 </div>
-                <div id="landing-suggestions" class="suggestions" role="listbox"></div>
+                <div id="suggestions" class="suggestions" role="listbox"></div>
               </div>
             </div>
-            <div class="eyebrow animate-sequence delay-1">Verified campus organizations</div>
-            <h1 class="hero-title animate-sequence delay-1">Campus events, in one reliable place.</h1>
-            <p class="animate-sequence delay-2">Club Cal helps students find active organizations, review upcoming events, and keep their calendars current without hunting across multiple platforms.</p>
-            <div class="hero-actions animate-sequence delay-3">
-              <button class="btn btn-primary" data-route="discovery">Browse Events</button>
-              <button class="btn btn-secondary" data-route="signup">Add your club</button>
+
+            <div id="discovery-results" hidden>
+              <div class="section-head compact">
+                <div>
+                  <h2 id="selected-school-title">School Events</h2>
+                  <p class="section-subtitle">
+                    Browse active organizations, review current listings, and subscribe to club calendars.
+                  </p>
+                </div>
+              </div>
+              <div id="filter-bar" class="filter-bar">
+                <button class="filter-chip active" type="button" data-filter="All">All</button>
+                <button class="filter-chip" type="button" data-filter="Social">Social</button>
+                <button class="filter-chip" type="button" data-filter="Academic">Academic</button>
+                <button class="filter-chip" type="button" data-filter="Sports">Sports</button>
+                <button class="filter-chip" type="button" data-filter="Arts">Arts</button>
+                <button class="filter-chip" type="button" data-filter="Volunteer">Volunteer</button>
+              </div>
+              <div id="club-grid" class="club-grid section"></div>
             </div>
           </div>
-
-          <aside class="hero-panel">
-            <div class="panel-chip">Campus-wide visibility</div>
-            <h2 class="hero-panel-title">From the first week to finals, keep the calendar current.</h2>
-            <p class="hero-panel-copy">Students get one dependable place to check what is happening. Clubs get a clear home for event publishing, updates, and calendar subscriptions.</p>
-            <div class="hero-stats">
-              <div class="stat-row">
-                <strong>1 tap</strong>
-                <div>
-                  <div class="stat-title">Subscribe or save</div>
-                  <div class="stat-copy">Use calendar tools students already rely on every day.</div>
-                </div>
-              </div>
-              <div class="stat-row">
-                <strong>Daily</strong>
-                <div>
-                  <div class="stat-title">Regular discovery</div>
-                  <div class="stat-copy">Search by school, filter by category, and check what is new.</div>
-                </div>
-              </div>
-              <div class="stat-row">
-                <strong>Proof</strong>
-                <div>
-                  <div class="stat-title">Club insights</div>
-                  <div class="stat-copy">Track calendar activity with numbers you can use in club planning and reporting.</div>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <section class="social-proof">
-          Built to be a dependable event platform for student organizations and the students who follow them.
         </section>
 
-        <section class="section">
-          <div class="section-head">
-            <div>
-              <h2 class="section-title">How It Works</h2>
-              <p class="section-subtitle">Students get a dependable way to check what is happening. Clubs get one place to publish and maintain events.</p>
+        <section id="view-admin" class="view" data-view="admin">
+          <div class="dashboard-layout">
+            <div class="dashboard-head">
+              <div>
+                <h2 class="dashboard-title">Club Review Admin</h2>
+                <p class="muted dashboard-subtitle">
+                  Review pending club submissions. Access lasts for this browser tab session only.
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="flow-grid">
-            <article class="card">
-              <div class="flow-tag">For Clubs</div>
-              <h3 class="card-heading">Publish events in one place.</h3>
-              <div class="event-meta">
-                <div class="meta-line"><strong>1</strong><span>Register with your school and wait for review.</span></div>
-                <div class="meta-line"><strong>2</strong><span>Create events with the essentials and optional details when you have them.</span></div>
-                <div class="meta-line"><strong>3</strong><span>Track calendar downloads and keep listings current for students.</span></div>
-              </div>
-            </article>
-            <article class="card">
-              <div class="flow-tag">For Students</div>
-              <h3 class="card-heading">Check what is happening across campus.</h3>
-              <div class="event-meta">
-                <div class="meta-line"><strong>1</strong><span>Search your school and see active organizations immediately.</span></div>
-                <div class="meta-line"><strong>2</strong><span>Filter by category and review current event listings.</span></div>
-                <div class="meta-line"><strong>3</strong><span>Subscribe to club calendars or save individual events without an account.</span></div>
-              </div>
-            </article>
+            <div class="panel">
+              <div id="admin-list" class="event-grid"></div>
+            </div>
           </div>
         </section>
-      </section>
+      </main>
 
-      <section id="view-signup" class="view" data-view="signup">
-        <div class="split-view">
-          <aside class="intro-panel">
-            <div class="flow-tag inverse">Club Registration</div>
-            <h2>Add your club to the campus event platform.</h2>
-            <p>Create your club profile, complete verification, and start publishing events students can reliably find and follow.</p>
-            <div class="intro-list">
-              <div class="intro-item"><strong>Verified access</strong><br>Every club is reviewed before activation.</div>
-              <div class="intro-item"><strong>Calendar reach</strong><br>Track how many students save your events.</div>
-              <div class="intro-item"><strong>Central workflow</strong><br>Manage events and reporting in one dashboard.</div>
-            </div>
-          </aside>
-
-          <div class="form-shell">
-            <h2>Add your club</h2>
-            <p class="muted">Create a club account. Your status will remain pending until verification is complete.</p>
-            <div id="supabase-config-signup" class="notice config-notice" hidden>
-              Add your Supabase URL and anon key in the script config block before using sign up or sign in.
-            </div>
-            <form id="signup-form" class="form" novalidate>
-              <div class="field">
-                <label for="signup-club-name">Club Name</label>
-                <input id="signup-club-name" name="clubName" type="text" autocomplete="organization">
-                <div class="error" data-error-for="clubName"></div>
-              </div>
-              <div class="field">
-                <label for="signup-school">University / School</label>
-                <div class="search-shell">
-                  <input id="signup-school" class="search-input" name="school" type="text" autocomplete="off" aria-autocomplete="list" aria-expanded="false" placeholder="Start typing your school name...">
-                  <div id="signup-school-suggestions" class="suggestions" role="listbox"></div>
-                </div>
-                <div class="error" data-error-for="school"></div>
-              </div>
-              <div class="field">
-                <label for="signup-email">Email Address</label>
-                <input id="signup-email" name="email" type="email" autocomplete="email">
-                <div class="error" data-error-for="email"></div>
-              </div>
-              <div class="field">
-                <label for="signup-password">Password</label>
-                <input id="signup-password" name="password" type="password" minlength="8" autocomplete="new-password">
-                <div class="error" data-error-for="password"></div>
-              </div>
-              <div class="notice">Your registration will be reviewed before your account is activated. We manually verify all clubs to ensure only real, legitimate organizations can post events.</div>
-              <button class="btn btn-primary" type="submit">Submit for Review</button>
-            </form>
-            <div id="signup-success" class="success-panel" aria-live="polite">
-              <div class="checkmark-wrap">
-                <svg class="checkmark" width="48" height="48" viewBox="0 0 52 52" aria-hidden="true">
-                  <circle cx="26" cy="26" r="22"></circle>
-                  <path d="M16 27L23 34L36 19"></path>
-                </svg>
-              </div>
-              <h3 class="success-title">Application submitted!</h3>
-              <p id="signup-success-text" class="muted success-copy"></p>
-              <a href="#" class="helper-link" data-route="landing">Back to home</a>
-            </div>
-            <p class="helper-row"><a class="helper-link" href="#" data-route="signin">Already approved? Sign in</a></p>
-          </div>
+      <footer class="site-footer">
+        <div class="container site-footer-inner">
+          <a href="#" class="brand" data-route="landing" aria-label="Club Cal home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <rect x="3.5" y="5.5" width="17" height="15" rx="3" stroke="white" stroke-width="2"></rect>
+                <path
+                  d="M7 3.5V7.5M17 3.5V7.5M3.5 10.5H20.5"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                ></path>
+              </svg>
+            </span>
+            <span class="brand-name">Club Cal</span>
+          </a>
+          <nav class="footer-links" aria-label="Footer">
+            <a class="footer-link" href="#" data-route="signup">For Clubs</a>
+            <a class="footer-link" href="#" data-route="discovery">Find Events</a>
+            <a class="footer-link" href="mailto:hello@clubcal.app">Contact</a>
+          </nav>
         </div>
-      </section>
+      </footer>
 
-      <section id="view-signin" class="view" data-view="signin">
-        <div class="split-view">
-          <aside class="intro-panel">
-            <div class="flow-tag inverse">Club Access</div>
-            <h2>Sign in to manage your club calendar.</h2>
-            <p>Access your dashboard to publish events, review analytics, and keep your club profile up to date.</p>
-          </aside>
+      <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    </div>
 
-          <div class="form-shell">
-            <h2>Sign in</h2>
-            <p class="muted">Use the same email and password you used during registration.</p>
-            <div id="supabase-config-signin" class="notice config-notice" hidden>
-              Add your Supabase URL and anon key in the script config block before using sign up or sign in.
-            </div>
-            <form id="signin-form" class="form" novalidate>
-              <div class="field">
-                <label for="signin-email">Email Address</label>
-                <input id="signin-email" name="email" type="email" autocomplete="email">
-                <div class="error" data-error-for="signinEmail"></div>
-              </div>
-              <div class="field">
-                <label for="signin-password">Password</label>
-                <input id="signin-password" name="password" type="password" autocomplete="current-password">
-                <div class="error" data-error-for="signinPassword"></div>
-              </div>
-              <button class="btn btn-primary" type="submit">Sign In</button>
-            </form>
-            <p class="helper-row"><a class="helper-link" href="#" data-route="signup">New club? Add it here</a></p>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-dashboard" class="view" data-view="dashboard">
-        <div class="dashboard-layout">
-          <div class="dashboard-head">
-            <div>
-              <h2 class="dashboard-title" id="dashboard-title">Welcome back, Club</h2>
-              <p class="muted dashboard-subtitle">Manage events, review calendar activity, and keep your club information current.</p>
-            </div>
-            <div id="account-badge" class="badge pending">Pending</div>
-          </div>
-
-          <div class="panel">
-            <div class="dashboard-tabs" role="tablist" aria-label="Club dashboard tabs">
-              <button class="tab-btn active" type="button" data-tab="events">My Events</button>
-              <button class="tab-btn" type="button" data-tab="create">Create Event</button>
-              <button class="tab-btn" type="button" data-tab="calendars">Calendars</button>
-              <button class="tab-btn" type="button" data-tab="insights">Insights</button>
-              <button class="tab-btn" type="button" data-tab="settings">Settings</button>
-            </div>
-
-            <section class="tab-panel active" data-tab-panel="events">
-              <div id="events-list" class="event-grid"></div>
-            </section>
-
-            <section class="tab-panel" data-tab-panel="create">
-              <div class="create-grid">
-                <form id="event-form" class="form" novalidate>
-                  <div class="field">
-                    <label for="event-title">Event Title</label>
-                    <input id="event-title" name="title" type="text">
-                    <div class="error" data-error-for="title"></div>
-                  </div>
-                  <div class="field">
-                    <label for="event-date">Date</label>
-                    <input id="event-date" name="date" type="date">
-                    <div class="error" data-error-for="date"></div>
-                  </div>
-                  <div class="field-row">
-                    <div class="field">
-                      <label for="event-start-time">Start Time</label>
-                      <input id="event-start-time" name="startTime" type="time">
-                      <div class="error" data-error-for="startTime"></div>
-                    </div>
-                    <div class="field">
-                      <label for="event-end-time">End Time</label>
-                      <input id="event-end-time" name="endTime" type="time">
-                      <div class="error" data-error-for="endTime"></div>
-                    </div>
-                  </div>
-                  <div class="field">
-                    <label for="event-address">Location / Address</label>
-                    <input id="event-address" name="address" type="text">
-                    <div class="error" data-error-for="address"></div>
-                  </div>
-                  <div class="field">
-                    <label for="event-room">Room / Building <span class="label-note">(optional)</span></label>
-                    <input id="event-room" name="room" type="text">
-                    <div class="error" data-error-for="room"></div>
-                  </div>
-                  <div class="field-row">
-                    <div class="field">
-                      <label for="event-attire">Attire <span class="label-note">(optional)</span></label>
-                      <select id="event-attire" name="attire">
-                        <option value="">Select attire</option>
-                        <option>Casual</option>
-                        <option>Business Casual</option>
-                        <option>Formal</option>
-                        <option>Costume/Themed</option>
-                        <option>Athletic</option>
-                        <option>No Dress Code</option>
-                      </select>
-                      <div class="error" data-error-for="attire"></div>
-                    </div>
-                    <div class="field">
-                      <label for="event-category">Event Category</label>
-                      <select id="event-category" name="category">
-                        <option value="">Select category</option>
-                        <option>Social</option>
-                        <option>Academic</option>
-                        <option>Sports</option>
-                        <option>Arts</option>
-                        <option>Volunteer</option>
-                        <option>Meeting</option>
-                        <option>Other</option>
-                      </select>
-                      <div class="error" data-error-for="category"></div>
-                    </div>
-                  </div>
-                  <div class="field">
-                    <label for="event-calendar">Calendar <span class="label-note">(optional)</span></label>
-                    <select id="event-calendar" name="calendarId">
-                      <option value="">— No specific calendar —</option>
-                    </select>
-                    <div class="error" data-error-for="calendarId"></div>
-                  </div>
-                  <div class="field">
-                    <label for="event-description">Description / Additional Details <span class="label-note">(optional)</span></label>
-                    <textarea id="event-description" name="description"></textarea>
-                    <div class="error" data-error-for="description"></div>
-                  </div>
-                  <div class="field">
-                    <label for="event-rsvp">RSVP Link <span class="label-note">(optional)</span></label>
-                    <input id="event-rsvp" name="rsvp" type="url" placeholder="https://">
-                    <div class="error" data-error-for="rsvp"></div>
-                  </div>
-                  <button class="btn btn-primary" type="submit" id="create-event-submit">Publish Event</button>
-                </form>
-
-                <aside class="preview-card">
-                  <div class="flow-tag">Preview</div>
-                  <h3 id="preview-title" class="preview-heading">Your event title</h3>
-                  <p id="preview-description" class="muted preview-copy">Event details will appear here as students browse your club profile.</p>
-                  <div class="preview-meta">
-                    <div class="meta-line"><strong>When</strong><span id="preview-datetime">Select a date and time.</span></div>
-                    <div class="meta-line"><strong>Where</strong><span id="preview-location">Add an address and room/building.</span></div>
-                    <div class="meta-line"><strong>Attire</strong><span id="preview-attire">Optional attire note.</span></div>
-                    <div class="meta-line"><strong>Category</strong><span id="preview-category">Pick a category for discovery.</span></div>
-                    <div class="meta-line"><strong>RSVP</strong><span id="preview-rsvp">Optional RSVP link appears here.</span></div>
-                  </div>
-                </aside>
-              </div>
-            </section>
-
-            <section class="tab-panel" data-tab-panel="calendars">
-              <div class="settings-card">
-                <div class="panel">
-                  <h3 class="settings-heading">Your Calendars</h3>
-                  <p class="muted">Create separate calendar feeds for different audiences — members only, e-board, specific sections, and more. Each calendar gets its own subscription link.</p>
-                  <form id="calendar-create-form" class="form" novalidate>
-                    <div class="field-row settings-calendar-row">
-                      <div class="field">
-                        <label for="calendar-name-input">Calendar Name</label>
-                        <input id="calendar-name-input" name="calendarName" type="text" placeholder="e.g. E-Board Only, All Members, Section A">
-                        <div class="error" data-error-for="calendarName"></div>
-                      </div>
-                      <div class="field">
-                        <label>&nbsp;</label>
-                        <button class="btn btn-primary" type="submit">Create Calendar</button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-                <div id="calendars-list"></div>
-              </div>
-            </section>
-
-            <section class="tab-panel" data-tab-panel="insights">
-              <div class="insights-grid">
-                <article class="insights-card">
-                  <div class="flow-tag">Total Reach</div>
-                  <p id="insights-total-downloads" class="insight-number">0</p>
-                  <p class="muted">Calendar downloads across all events.</p>
-                </article>
-                <article class="insights-card">
-                  <div class="flow-tag">Published Events</div>
-                  <p id="insights-event-count" class="insight-number">0</p>
-                  <p class="muted">Events currently in your dashboard.</p>
-                </article>
-                <article class="insights-card">
-                  <div class="flow-tag">Top Event</div>
-                  <p id="insights-top-downloads" class="insight-number">0</p>
-                  <p id="insights-top-event-label" class="muted">No event downloads yet.</p>
-                </article>
-              </div>
-              <div class="panel">
-                <h3 class="settings-heading">Downloads by Event</h3>
-                  <p class="muted">Review which events were most frequently added to student calendars.</p>
-                <div id="insights-chart" class="bar-chart"></div>
-              </div>
-            </section>
-
-            <section class="tab-panel" data-tab-panel="settings">
-              <div class="settings-card">
-                <div class="panel">
-                  <h3 class="settings-heading">Your Calendar Link</h3>
-                  <p class="muted">Share this link with students. Subscribers will automatically receive your published events and updates.</p>
-                  <div class="form">
-                    <div class="field-row settings-calendar-row">
-                      <div class="field">
-                        <label for="calendar-feed-url">Live Feed URL</label>
-                        <input id="calendar-feed-url" type="text" readonly>
-                      </div>
-                      <div class="field">
-                        <label>&nbsp;</label>
-                        <button id="copy-calendar-link-btn" class="btn btn-secondary" type="button">Copy Link</button>
-                      </div>
-                    </div>
-                    <div class="settings-actions settings-calendar-actions">
-                      <button id="google-calendar-link-btn" class="btn btn-primary btn-small" type="button">Add to Google Calendar</button>
-                      <button id="apple-calendar-link-btn" class="btn btn-ghost btn-small" type="button">Add to Apple Calendar</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="dashboard-head">
-                  <div>
-                    <h3 class="settings-heading">Club Settings</h3>
-                    <p class="muted">Keep your club name and school details current.</p>
-                  </div>
-                  <button id="settings-edit-btn" class="btn btn-secondary btn-small" type="button">Edit</button>
-                </div>
-
-                <div id="settings-read-view">
-                  <dl>
-                    <dt>Club Name</dt>
-                    <dd id="settings-club-name">-</dd>
-                    <dt>University / School</dt>
-                    <dd id="settings-school">-</dd>
-                    <dt>Email Address</dt>
-                    <dd id="settings-email">-</dd>
-                  </dl>
-                </div>
-
-                <form id="settings-form" class="form settings-form" hidden novalidate>
-                  <div class="field">
-                    <label for="settings-club-name-input">Club Name</label>
-                    <input id="settings-club-name-input" name="clubName" type="text">
-                    <div class="error" data-error-for="settingsClubName"></div>
-                  </div>
-                  <div class="field">
-                    <label for="settings-school-input">University / School</label>
-                    <input id="settings-school-input" name="school" type="text">
-                    <div class="error" data-error-for="settingsSchool"></div>
-                  </div>
-                  <div class="field">
-                    <label for="settings-email-input">Email Address</label>
-                    <input id="settings-email-input" name="email" type="email" readonly>
-                  </div>
-                  <div class="settings-actions">
-                    <button class="btn btn-primary" type="submit">Save Changes</button>
-                    <button id="settings-cancel-btn" class="btn btn-ghost" type="button">Cancel</button>
-                  </div>
-                </form>
-
-                <div class="settings-actions">
-                  <button id="signout-btn" class="btn btn-secondary" type="button">Sign Out</button>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-discovery" class="view" data-view="discovery">
-        <div class="discovery-layout">
-          <div class="panel">
-            <div class="section-head compact">
-              <div>
-                <h2>Find campus events</h2>
-                <p class="section-subtitle">Search your school, filter by category, and follow the organizations you care about.</p>
-              </div>
-            </div>
-            <div class="search-shell">
-              <input id="school-search" class="search-input" type="text" placeholder="Search your school or university..." autocomplete="off" aria-autocomplete="list" aria-expanded="false">
-              <div class="search-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
-                  <path d="M20 20L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
-              </div>
-              <div id="suggestions" class="suggestions" role="listbox"></div>
-            </div>
-          </div>
-
-          <div id="discovery-results" hidden>
-            <div class="section-head compact">
-              <div>
-                <h2 id="selected-school-title">School Events</h2>
-                <p class="section-subtitle">Browse active organizations, review current listings, and subscribe to club calendars.</p>
-              </div>
-            </div>
-            <div id="filter-bar" class="filter-bar">
-              <button class="filter-chip active" type="button" data-filter="All">All</button>
-              <button class="filter-chip" type="button" data-filter="Social">Social</button>
-              <button class="filter-chip" type="button" data-filter="Academic">Academic</button>
-              <button class="filter-chip" type="button" data-filter="Sports">Sports</button>
-              <button class="filter-chip" type="button" data-filter="Arts">Arts</button>
-              <button class="filter-chip" type="button" data-filter="Volunteer">Volunteer</button>
-            </div>
-            <div id="club-grid" class="club-grid section"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-admin" class="view" data-view="admin">
-        <div class="dashboard-layout">
-          <div class="dashboard-head">
-            <div>
-              <h2 class="dashboard-title">Club Review Admin</h2>
-              <p class="muted dashboard-subtitle">Review pending club submissions. Access lasts for this browser tab session only.</p>
-            </div>
-          </div>
-          <div class="panel">
-            <div id="admin-list" class="event-grid"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="container site-footer-inner">
-        <a href="#" class="brand" data-route="landing" aria-label="Club Cal home">
-          <span class="brand-mark" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="5.5" width="17" height="15" rx="3" stroke="white" stroke-width="2"></rect>
-              <path d="M7 3.5V7.5M17 3.5V7.5M3.5 10.5H20.5" stroke="white" stroke-width="2" stroke-linecap="round"></path>
-            </svg>
-          </span>
-          <span class="brand-name">Club Cal</span>
-        </a>
-        <nav class="footer-links" aria-label="Footer">
-          <a class="footer-link" href="#" data-route="signup">For Clubs</a>
-          <a class="footer-link" href="#" data-route="discovery">Find Events</a>
-          <a class="footer-link" href="mailto:hello@clubcal.app">Contact</a>
-        </nav>
-      </div>
-    </footer>
-
-    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  </div>
-
-  <script type="module" src="./src/app.js"></script>
-</body>
+    <script type="module" src="./src/app.js"></script>
+  </body>
 </html>

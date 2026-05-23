@@ -24,10 +24,7 @@ export async function createCalendar(name) {
 }
 
 export async function deleteCalendar(calendarId) {
-  const { error } = await supabase
-    .from("calendars")
-    .delete()
-    .eq("id", calendarId);
+  const { error } = await supabase.from("calendars").delete().eq("id", calendarId);
 
   if (error) throw error;
 }

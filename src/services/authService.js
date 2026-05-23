@@ -1,14 +1,9 @@
-import { supabase } from "./supabaseClient.js";
+import { supabase, SUPABASE_FUNCTIONS_BASE_URL, SUPABASE_ANON_KEY } from "./supabaseClient.js";
 import { mapClub, setError } from "../utils/helpers.js";
 import { store } from "../state/store.js";
 
 export async function fetchClubByEmail(email) {
-  const { data, error } = await supabase
-    .from("clubs")
-    .select("*")
-    .eq("email", email)
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await supabase.from("clubs").select("*").eq("email", email).limit(1).maybeSingle();
 
   if (error) throw error;
   return data || null;
@@ -88,31 +83,43 @@ export async function signOutClub() {
 }
 
 export async function updateClubProfile(clubId, updates) {
-  const { data, error } = await supabase
-    .from("clubs")
-    .update(updates)
-    .eq("id", clubId)
-    .select()
-    .single();
+  const { data, error } = await supabase.from("clubs").update(updates).eq("id", clubId).select().single();
 
   if (error) throw error;
   return mapClub(data);
 }
 
-export async function approveClub(clubId) {
-  const { error } = await supabase
-    .from("clubs")
-    .update({ status: "active" })
-    .eq("id", clubId);
+// Admin approve/reject actions run through the `admin-club-action` edge
+// function so that (a) the admin secret lives on the server, not in the
+// browser bundle, and (b) the update uses the service role to bypass the
+// clubs_update_own RLS policy. The client passes the admin token via the
+// `X-Admin-Token` header; the function verifies it against ADMIN_SECRET.
 
-  if (error) throw error;
+async function callAdminAction(action, clubId, reason) {
+  const adminToken = sessionStorage.getItem("clubcal.adminToken") || "";
+  const response = await fetch(`${SUPABASE_FUNCTIONS_BASE_URL}/admin-club-action`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": adminToken,
+      // Supabase Edge Functions require an apikey/Authorization header by
+      // default, even if the function itself does its own auth.
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({ action, clubId, reason })
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(body || `Admin action failed (${response.status}).`);
+  }
 }
 
-export async function rejectClub(clubId) {
-  const { error } = await supabase
-    .from("clubs")
-    .delete()
-    .eq("id", clubId);
+export async function approveClub(clubId) {
+  await callAdminAction("approve", clubId);
+}
 
-  if (error) throw error;
+export async function rejectClub(clubId, reason) {
+  await callAdminAction("reject", clubId, reason);
 }
