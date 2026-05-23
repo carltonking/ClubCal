@@ -10,7 +10,7 @@ create or replace function public.update_event(
   p_address text,
   p_room text default null,
   p_attire text default null,
-  p_category text,
+  p_category text default null,
   p_description text default null,
   p_rsvp_url text default null,
   p_calendar_id uuid default null
@@ -31,8 +31,7 @@ as $$
     description = p_description,
     rsvp_url = p_rsvp_url,
     calendar_id = p_calendar_id,
-    sequence = sequence + 1,
-    updated_at = now()
+    sequence = sequence + 1
   where id = event_id
   returning *;
 $$;
@@ -48,8 +47,7 @@ set search_path = public
 as $$
   update public.events set
     cancelled = true,
-    sequence = sequence + 1,
-    updated_at = now()
+    sequence = sequence + 1
   where id = event_id;
 $$;
 
