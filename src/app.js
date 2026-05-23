@@ -56,10 +56,7 @@ const Dom = {
   settingsClubName: document.getElementById("settings-club-name"),
   settingsSchool: document.getElementById("settings-school"),
   settingsEmail: document.getElementById("settings-email"),
-  calendarFeedUrlInput: document.getElementById("calendar-feed-url"),
-  copyCalendarLinkBtn: document.getElementById("copy-calendar-link-btn"),
-  googleCalendarLinkBtn: document.getElementById("google-calendar-link-btn"),
-  appleCalendarLinkBtn: document.getElementById("apple-calendar-link-btn"),
+
   settingsClubNameInput: document.getElementById("settings-club-name-input"),
   settingsSchoolInput: document.getElementById("settings-school-input"),
   settingsEmailInput: document.getElementById("settings-email-input"),
@@ -172,9 +169,7 @@ const App = {
   bindSettingsActions() {
     Dom.settingsEditBtn.addEventListener("click", () => Actions.startSettingsEdit());
     Dom.settingsCancelBtn.addEventListener("click", () => Actions.cancelSettingsEdit());
-    Dom.copyCalendarLinkBtn.addEventListener("click", () => Actions.copyCalendarLink());
-    Dom.googleCalendarLinkBtn.addEventListener("click", () => Actions.openGoogleFeed());
-    Dom.appleCalendarLinkBtn.addEventListener("click", () => Actions.openAppleFeed());
+
     Dom.signoutBtn.addEventListener("click", () => Actions.handleSignOut());
     Dom.navLogoutBtn.addEventListener("click", () => Actions.handleSignOut());
   },

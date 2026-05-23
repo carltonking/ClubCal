@@ -1,7 +1,7 @@
 import { signUpClub, signInClub, signOutClub, updateClubProfile } from "../services/authService.js";
 import { createEvent } from "../services/eventService.js";
 import { createCalendar } from "../services/calendarService.js";
-import { clearErrors, setError, getClubFeedWebcalUrl } from "../utils/helpers.js";
+import { clearErrors, setError } from "../utils/helpers.js";
 import { store } from "../state/store.js";
 import { UI } from "../ui/ui.js";
 import { showView } from "../router/router.js";
@@ -188,31 +188,7 @@ export const Actions = {
     }
   },
 
-  async copyCalendarLink() {
-    if (!Dom.calendarFeedUrlInput.value) return;
-    try {
-      await navigator.clipboard.writeText(Dom.calendarFeedUrlInput.value);
-      const originalLabel = Dom.copyCalendarLinkBtn.textContent;
-      Dom.copyCalendarLinkBtn.textContent = "Copied ✓";
-      UI.showToast("Calendar link copied", "Your club subscription link is ready to share.");
-      setTimeout(() => {
-        Dom.copyCalendarLinkBtn.textContent = originalLabel;
-      }, 2000);
-    } catch (error) {
-      UI.showToast("Copy failed", "We couldn't copy the calendar link to your clipboard.");
-    }
-  },
 
-  openGoogleFeed() {
-    if (!store.state.activeClub?.id) return;
-    const webcalUrl = getClubFeedWebcalUrl(store.state.activeClub.id);
-    window.open(`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`, "_blank", "noopener");
-  },
-
-  openAppleFeed() {
-    if (!store.state.activeClub?.id) return;
-    window.location.href = getClubFeedWebcalUrl(store.state.activeClub.id);
-  },
 
   async handleCalendarCreateSubmit(event) {
     event.preventDefault();

@@ -118,7 +118,7 @@ export const UI = {
     Dom.settingsClubName.textContent = activeClub.clubName;
     Dom.settingsSchool.textContent = activeClub.school || "-";
     Dom.settingsEmail.textContent = activeClub.email;
-    Dom.calendarFeedUrlInput.value = getClubFeedWebcalUrl(activeClub.id);
+
     Dom.settingsClubNameInput.value = activeClub.clubName;
     Dom.settingsSchoolInput.value = activeClub.school || "";
     Dom.settingsEmailInput.value = activeClub.email;

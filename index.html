@@ -105,7 +105,6 @@
       [data-theme="dark"] .empty-state,
       [data-theme="dark"] .loading-state { color: var(--muted); }
       [data-theme="dark"] dt { color: var(--muted); }
-      [data-theme="dark"] #calendar-feed-url { background: var(--bg); color: var(--text); }
       [data-theme="dark"] .site-footer { background: #080e1a; border-top-color: var(--border); }
       [data-theme="dark"] .footer-link { color: var(--muted); }
       [data-theme="dark"] .footer-link:hover { color: var(--text); }
@@ -583,8 +582,6 @@
       .btn-danger:hover { background: var(--danger-bg); }
 
       .settings-calendar-actions .btn { min-height: 40px; }
-
-      #calendar-feed-url { font-size: 0.92rem; color: var(--navy); background: var(--bg); }
 
       .empty-state {
         padding: 32px 24px; border-radius: var(--radius);
@@ -1325,34 +1322,6 @@
 
               <section class="tab-panel" data-tab-panel="settings">
                 <div class="settings-card">
-                  <div class="panel">
-                    <h3 class="settings-heading">Your Calendar Link</h3>
-                    <p class="muted">
-                      Share this link with students. Subscribers will automatically receive your published events and
-                      updates.
-                    </p>
-                    <div class="form">
-                      <div class="field-row settings-calendar-row">
-                        <div class="field">
-                          <label for="calendar-feed-url">Live Feed URL</label>
-                          <input id="calendar-feed-url" type="text" readonly />
-                        </div>
-                        <div class="field">
-                          <label>&nbsp;</label>
-                          <button id="copy-calendar-link-btn" class="btn btn-secondary" type="button">Copy Link</button>
-                        </div>
-                      </div>
-                      <div class="settings-actions settings-calendar-actions">
-                        <button id="google-calendar-link-btn" class="btn btn-primary btn-small" type="button">
-                          Add to Google Calendar
-                        </button>
-                        <button id="apple-calendar-link-btn" class="btn btn-ghost btn-small" type="button">
-                          Add to Apple Calendar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
                   <div class="dashboard-head">
                     <div>
                       <h3 class="settings-heading">Club Settings</h3>
