@@ -10,14 +10,25 @@ export async function fetchClubByEmail(email) {
 }
 
 export async function fetchPendingClubs() {
-  const { data, error } = await supabase
-    .from("clubs")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+  const adminToken = sessionStorage.getItem("clubcal.adminToken") || "";
+  const response = await fetch(`${SUPABASE_FUNCTIONS_BASE_URL}/admin-club-action`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": adminToken,
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({ action: "list" })
+  });
 
-  if (error) throw error;
-  return (data || []).map(mapClub);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(body || `Failed to fetch pending clubs (${response.status}).`);
+  }
+
+  const result = await response.json();
+  return (result?.clubs || []).map(mapClub);
 }
 
 export async function signUpClub(payload, signupForm) {

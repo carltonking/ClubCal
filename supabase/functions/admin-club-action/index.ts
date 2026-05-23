@@ -66,13 +66,24 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "Missing clubId." }, 400);
   }
 
-  if (action !== "approve" && action !== "reject") {
-    return jsonResponse({ error: "action must be 'approve' or 'reject'." }, 400);
-  }
-
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false }
   });
+
+  if (action === "list") {
+    const { data: clubs, error } = await supabase
+      .from("clubs")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    if (error) return jsonResponse({ error: error.message }, 500);
+    return jsonResponse({ ok: true, clubs }, 200);
+  }
+
+  if (action !== "approve" && action !== "reject") {
+    return jsonResponse({ error: "action must be 'list', 'approve', or 'reject'." }, 400);
+  }
 
   if (action === "approve") {
     const { error } = await supabase.from("clubs").update({ status: "approved", denial_reason: null }).eq("id", clubId);
