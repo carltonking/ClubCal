@@ -81,8 +81,8 @@ export const Actions = {
     const requiredFields = [
       ["title", "Please enter an event title."],
       ["date", "Please select a date."],
-      ["startTime", "Please choose a start time."],
-      ["endTime", "Please choose an end time."],
+      ["startTime", "Please enter a start time."],
+      ["endTime", "Please enter an end time."],
       ["address", "Please add a location or address."],
       ["category", "Please choose a category."]
     ];
@@ -100,11 +100,30 @@ export const Actions = {
       valid = false;
     }
 
-    if (payload.date && payload.startTime && payload.endTime) {
+    const VALID_24H = /^([01]\d|2[0-3])([0-5]\d)$/;
+
+    const validateAndConvertTime = (field) => {
+      const raw = String(payload[field] || "").replace(/\s/g, "");
+      if (!raw) return null;
+      const match = raw.match(VALID_24H);
+      if (!match) {
+        setError(Dom.eventForm, field, "* Must be in correct 24-hour format.");
+        valid = false;
+        return null;
+      }
+      return `${match[1]}:${match[2]}`;
+    };
+
+    const convertedStart = payload.startTime ? validateAndConvertTime("startTime") : null;
+    const convertedEnd = payload.endTime ? validateAndConvertTime("endTime") : null;
+
+    if (convertedStart && convertedEnd) {
+      payload.startTime = convertedStart;
+      payload.endTime = convertedEnd;
       const start = new Date(`${payload.date}T${payload.startTime}`);
       const end = new Date(`${payload.date}T${payload.endTime}`);
       if (end <= start) {
-        setError(Dom.eventForm, "endTime", "End time must be after the start time.");
+        setError(Dom.eventForm, "endTime", "* Must be in correct 24-hour format.");
         valid = false;
       }
     }
