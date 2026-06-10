@@ -1,0 +1,18 @@
+# Supabase project configuration, now version-controlled so the deploy posture
+# is reproducible from the repo (previously it lived only in the gitignored
+# supabase/.temp directory).
+project_id = "edcnllalkavncijrewno"
+
+# Edge function auth posture. All three functions are deliberately reachable
+# without a Supabase JWT and enforce their own access control:
+#   - ical-feed: public by design (external calendar clients can't send a JWT).
+#   - admin-club-action: gated by the ADMIN_SECRET header check in the function.
+#   - verify-club: gated by the optional VERIFY_CLUB_SECRET header check.
+[functions.ical-feed]
+verify_jwt = false
+
+[functions.admin-club-action]
+verify_jwt = false
+
+[functions.verify-club]
+verify_jwt = false

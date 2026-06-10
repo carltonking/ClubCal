@@ -1176,6 +1176,23 @@
                       </select>
                       <div class="error" data-error-for="calendarId"></div>
                     </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="event-repeat">Repeats <span class="label-note">(optional)</span></label>
+                        <select id="event-repeat" name="repeat">
+                          <option value="">Does not repeat</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                        <div class="error" data-error-for="repeat"></div>
+                      </div>
+                      <div class="field">
+                        <label for="event-repeat-until">Repeat until <span class="label-note">(optional)</span></label>
+                        <input id="event-repeat-until" name="repeatUntil" type="date" />
+                        <div class="error" data-error-for="repeatUntil"></div>
+                      </div>
+                    </div>
                     <div class="field">
                       <label for="event-description"
                         >Description / Additional Details <span class="label-note">(optional)</span></label

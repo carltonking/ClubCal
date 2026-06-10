@@ -1,7 +1,7 @@
 import { signUpClub, signInClub, signOutClub, updateClubProfile } from "../services/authService.js";
 import { createEvent, updateEvent } from "../services/eventService.js";
 import { createCalendar } from "../services/calendarService.js";
-import { clearErrors, setError } from "../utils/helpers.js";
+import { clearErrors, setError, buildRRule } from "../utils/helpers.js";
 import { store } from "../state/store.js";
 import { UI } from "../ui/ui.js";
 import { showView } from "../router/router.js";
@@ -128,6 +128,18 @@ export const Actions = {
       }
     }
 
+    // Recurrence (optional). Build a structured RRULE from the constrained
+    // "Repeats" picker; never accept free text.
+    if (payload.repeat) {
+      if (payload.repeatUntil && payload.date && payload.repeatUntil < payload.date) {
+        setError(Dom.eventForm, "repeatUntil", "Repeat-until date must be on or after the event date.");
+        valid = false;
+      }
+      payload.recurrence = buildRRule(payload.repeat, payload.repeatUntil);
+    } else {
+      payload.recurrence = null;
+    }
+
     if (!valid) return;
 
     try {
@@ -194,8 +206,6 @@ export const Actions = {
       UI.showToast("Update failed", error.message);
     }
   },
-
-
 
   async handleCalendarCreateSubmit(event) {
     event.preventDefault();

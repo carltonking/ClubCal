@@ -19,7 +19,9 @@ const {
   formatTimeRange,
   categoryClass,
   mapClub,
-  mapEvent
+  mapEvent,
+  buildRRule,
+  parseRRule
 } = await import("../src/utils/helpers.js");
 
 describe("escapeHTML", () => {
@@ -218,7 +220,10 @@ describe("mapEvent", () => {
       description: "Fun event",
       rsvp_url: "https://example.com/rsvp",
       created_at: "2026-05-01T00:00:00Z",
-      download_count: 5
+      download_count: 5,
+      sequence: 3,
+      cancelled: true,
+      recurrence: "FREQ=WEEKLY;UNTIL=20261231T235959Z"
     };
     const event = mapEvent(row);
     expect(event).toEqual({
@@ -236,7 +241,10 @@ describe("mapEvent", () => {
       description: "Fun event",
       rsvp_url: "https://example.com/rsvp",
       created_at: "2026-05-01T00:00:00Z",
-      download_count: 5
+      download_count: 5,
+      sequence: 3,
+      cancelled: true,
+      recurrence: "FREQ=WEEKLY;UNTIL=20261231T235959Z"
     });
   });
 
@@ -257,5 +265,52 @@ describe("mapEvent", () => {
     expect(event.description).toBe("");
     expect(event.rsvp_url).toBe("");
     expect(event.download_count).toBe(0);
+    expect(event.cancelled).toBe(false);
+    expect(event.sequence).toBe(0);
+    expect(event.recurrence).toBeNull();
+  });
+});
+
+describe("buildRRule", () => {
+  it("returns null for no/unknown repeat", () => {
+    expect(buildRRule("", "2026-12-31")).toBeNull();
+    expect(buildRRule(null, null)).toBeNull();
+    expect(buildRRule("yearly", null)).toBeNull();
+  });
+
+  it("builds FREQ without UNTIL", () => {
+    expect(buildRRule("weekly", "")).toBe("FREQ=WEEKLY");
+    expect(buildRRule("Daily", null)).toBe("FREQ=DAILY");
+  });
+
+  it("builds FREQ with UNTIL", () => {
+    expect(buildRRule("monthly", "2026-12-31")).toBe("FREQ=MONTHLY;UNTIL=20261231T235959Z");
+  });
+
+  it("ignores malformed until dates", () => {
+    expect(buildRRule("weekly", "not-a-date")).toBe("FREQ=WEEKLY");
+  });
+});
+
+describe("parseRRule", () => {
+  it("returns empties for null", () => {
+    expect(parseRRule(null)).toEqual({ repeat: "", until: "" });
+    expect(parseRRule("")).toEqual({ repeat: "", until: "" });
+  });
+
+  it("parses FREQ and UNTIL", () => {
+    expect(parseRRule("FREQ=WEEKLY;UNTIL=20261231T235959Z")).toEqual({
+      repeat: "weekly",
+      until: "2026-12-31"
+    });
+  });
+
+  it("parses FREQ without UNTIL", () => {
+    expect(parseRRule("FREQ=DAILY")).toEqual({ repeat: "daily", until: "" });
+  });
+
+  it("round-trips with buildRRule", () => {
+    const rule = buildRRule("monthly", "2027-01-15");
+    expect(parseRRule(rule)).toEqual({ repeat: "monthly", until: "2027-01-15" });
   });
 });

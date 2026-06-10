@@ -24,6 +24,7 @@ type EventRow = {
   updated_at: string | null;
   sequence: number | null;
   cancelled: boolean | null;
+  recurrence: string | null;
 };
 
 const corsHeaders = {
@@ -107,6 +108,13 @@ function buildEventBlock(eventItem: EventRow, clubName: string) {
     `STATUS:${eventItem.cancelled ? "CANCELLED" : "CONFIRMED"}`,
     "END:VEVENT"
   ];
+
+  // Recurrence: a single VEVENT plus an RRULE; clients expand the series.
+  // The value is structured (built from a constrained picker, not free text),
+  // so it is emitted verbatim. Inserted before END:VEVENT.
+  if (eventItem.recurrence) {
+    lines.splice(lines.length - 1, 0, `RRULE:${eventItem.recurrence}`);
+  }
 
   return lines.map((line) => foldLine(line)).join("\r\n");
 }
@@ -212,7 +220,12 @@ Deno.serve(async (request) => {
     headers: {
       ...corsHeaders,
       "Content-Type": "text/calendar; charset=utf-8",
-      "Cache-Control": "no-cache, no-store",
+      // Allow short shared/CDN caching: external calendar clients only poll
+      // ~hourly (see X-PUBLISHED-TTL:PT1H), so serving a cached feed for up to
+      // an hour avoids a full service-role query + rebuild on every poll.
+      // Cancellations still propagate within the hour and the 30-day
+      // STATUS:CANCELLED grace window covers slower clients.
+      "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
       "Content-Disposition": `inline; filename="${club.id}.ics"`
     }
   });

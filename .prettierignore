@@ -1,3 +1,8 @@
 dist/
 supabase/.temp/
 .claude/
+# index.html is a hand-maintained single-file app (inline CSS + all views).
+# Its HTML/embedded-CSS formatting is sensitive to the Prettier version, so it
+# is excluded from the format gate to keep CI deterministic. Match the
+# surrounding 2-space indentation by hand when editing it.
+index.html

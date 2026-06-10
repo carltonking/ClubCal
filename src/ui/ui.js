@@ -4,8 +4,7 @@ import {
   fetchDiscoverySchools,
   fetchActiveClubsBySchool,
   deleteEvent,
-  updateEventDownloadCount,
-  fetchEvent
+  updateEventDownloadCount
 } from "../services/eventService.js";
 import { fetchCalendarsForClub } from "../services/calendarService.js";
 import { isSupabaseConfigured } from "../services/supabaseClient.js";
@@ -16,8 +15,8 @@ import {
   categoryClass,
   mapClub,
   mapEvent,
+  parseRRule,
   getClubFeedUrl,
-  getClubFeedWebcalUrl,
   getCalendarFeedUrl,
   getCalendarFeedWebcalUrl,
   toWebcalUrl
@@ -99,6 +98,11 @@ export const UI = {
     Dom.eventForm.querySelector('[name="calendarId"]').value = eventItem.calendar_id || "";
     Dom.eventForm.querySelector('[name="description"]').value = eventItem.description || "";
     Dom.eventForm.querySelector('[name="rsvp"]').value = eventItem.rsvp_url || "";
+    const { repeat, until } = parseRRule(eventItem.recurrence);
+    const repeatField = Dom.eventForm.querySelector('[name="repeat"]');
+    const repeatUntilField = Dom.eventForm.querySelector('[name="repeatUntil"]');
+    if (repeatField) repeatField.value = repeat;
+    if (repeatUntilField) repeatUntilField.value = until;
     if (Dom.eventSubmitBtn) Dom.eventSubmitBtn.textContent = "Update Event";
     if (Dom.cancelEditBtn) Dom.cancelEditBtn.hidden = false;
     this.updatePreview();

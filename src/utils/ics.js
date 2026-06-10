@@ -2,6 +2,29 @@ import { escapeICS } from "./helpers.js";
 
 const pad = (value) => String(value).padStart(2, "0");
 
+// RFC 5545 line folding: a content line must not exceed 75 octets;
+// continuation lines start with a single space. Mirrors the foldLine helper
+// in supabase/functions/ical-feed/index.ts so downloaded single-event files
+// match the server feed.
+export function foldLine(value) {
+  const maxLen = 75;
+  if (value.length <= maxLen) return value;
+
+  const lines = [];
+  let remaining = value;
+  while (remaining.length > 0) {
+    if (lines.length === 0) {
+      lines.push(remaining.substring(0, maxLen));
+      remaining = remaining.substring(maxLen);
+    } else {
+      const chunk = remaining.substring(0, maxLen - 1);
+      lines.push(" " + chunk);
+      remaining = remaining.substring(maxLen - 1);
+    }
+  }
+  return lines.join("\r\n");
+}
+
 // Floating time: RFC 5545 "form 1" (YYYYMMDDTHHMMSS, no trailing Z, no
 // TZID). Calendar apps interpret this as "local wall-clock time on the
 // observer's device." For campus events that's what creators and
@@ -46,6 +69,8 @@ export function createICSContent(eventItem, clubName) {
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${toICSDate(eventItem.date, eventItem.start_time)}`,
     `DTEND:${toICSDate(eventItem.date, eventItem.end_time)}`,
+    // Recurrence: a structured RRULE (built by buildRRule), emitted verbatim.
+    ...(eventItem.recurrence ? [`RRULE:${eventItem.recurrence}`] : []),
     `SUMMARY:${escapeICS(`${eventItem.title} – ${clubName}`)}`,
     `DESCRIPTION:${escapeICS(descriptionLines)}`,
     `LOCATION:${escapeICS(location)}`,
@@ -53,7 +78,9 @@ export function createICSContent(eventItem, clubName) {
     `X-CLUB:${escapeICS(clubName)}`,
     "END:VEVENT",
     "END:VCALENDAR"
-  ].join("\r\n");
+  ]
+    .map(foldLine)
+    .join("\r\n");
 }
 
 export function downloadICS(eventItem, clubName, triggerButton) {
