@@ -4,7 +4,7 @@ vi.mock("../src/services/supabaseClient.js", () => ({
   SUPABASE_FUNCTIONS_BASE_URL: "https://functions.example.com/v1"
 }));
 
-const { toICSDate, createICSContent } = await import("../src/utils/ics.js");
+const { toICSDate, createICSContent, foldLine } = await import("../src/utils/ics.js");
 
 describe("toICSDate", () => {
   it("formats date and time to ICS floating time", () => {
@@ -17,6 +17,23 @@ describe("toICSDate", () => {
 
   it("handles single-digit months and days", () => {
     expect(toICSDate("2026-01-02", "08:00")).toBe("20260102T080000");
+  });
+});
+
+describe("foldLine", () => {
+  it("leaves lines of 75 chars or fewer unchanged", () => {
+    expect(foldLine("SHORT:value")).toBe("SHORT:value");
+    expect(foldLine("x".repeat(75))).toBe("x".repeat(75));
+  });
+
+  it("folds longer lines with CRLF + leading space and round-trips", () => {
+    const long = "DESCRIPTION:" + "x".repeat(100);
+    const folded = foldLine(long);
+    expect(folded).toContain("\r\n ");
+    folded.split("\r\n").forEach((physical) => {
+      expect(physical.length).toBeLessThanOrEqual(75);
+    });
+    expect(folded.replace(/\r\n /g, "")).toBe(long);
   });
 });
 
@@ -59,7 +76,27 @@ describe("createICSContent", () => {
 
   it("includes description with attire and RSVP", () => {
     const ics = createICSContent(eventItem, clubName);
-    expect(ics).toContain("DESCRIPTION:Annual tournament\\nAttire: Casual\\nRSVP: https://example.com/rsvp");
+    // Unfold RFC 5545 continuation lines before asserting on logical content.
+    const unfolded = ics.replace(/\r\n /g, "");
+    expect(unfolded).toContain("DESCRIPTION:Annual tournament\\nAttire: Casual\\nRSVP: https://example.com/rsvp");
+  });
+
+  it("folds every physical line to 75 chars or fewer", () => {
+    const longEvent = { ...eventItem, description: "y".repeat(200) };
+    const ics = createICSContent(longEvent, clubName);
+    ics.split("\r\n").forEach((line) => {
+      expect(line.length).toBeLessThanOrEqual(75);
+    });
+  });
+
+  it("includes RRULE when recurrence is set", () => {
+    const ics = createICSContent({ ...eventItem, recurrence: "FREQ=WEEKLY;UNTIL=20261231T235959Z" }, clubName);
+    expect(ics).toContain("RRULE:FREQ=WEEKLY;UNTIL=20261231T235959Z");
+  });
+
+  it("omits RRULE when there is no recurrence", () => {
+    const ics = createICSContent(eventItem, clubName);
+    expect(ics).not.toContain("RRULE:");
   });
 
   it("handles missing optional fields gracefully", () => {

@@ -3,7 +3,13 @@ import { mapClub, setError } from "../utils/helpers.js";
 import { store } from "../state/store.js";
 
 export async function fetchClubByEmail(email) {
-  const { data, error } = await supabase.from("clubs").select("*").eq("email", email).limit(1).maybeSingle();
+  // Supabase Auth lowercases the session email, and the clubs unique index is
+  // on lower(email), so always look up by the normalized form. Otherwise a
+  // mixed-case signup ("Foo@x.com") would never match its own session email.
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const { data, error } = await supabase.from("clubs").select("*").eq("email", normalizedEmail).limit(1).maybeSingle();
 
   if (error) throw error;
   return data || null;
@@ -52,7 +58,11 @@ export async function signUpClub(payload, signupForm) {
     user_id: userId,
     club_name: payload.clubName,
     school: payload.school,
-    email: payload.email,
+    // Store the normalized email so it always matches the lowercased session
+    // email later (see fetchClubByEmail).
+    email: String(payload.email || "")
+      .trim()
+      .toLowerCase(),
     status: "pending"
   });
 
@@ -74,6 +84,12 @@ export async function signInClub(email, password) {
   if (!clubRow) {
     throw new Error("No approved club found for this email.");
   }
+  if (clubRow.status === "denied") {
+    // A denied application must not regain dashboard access. Pending clubs are
+    // still allowed in so they can see their "Pending" status while they wait.
+    await supabase.auth.signOut().catch(() => {});
+    throw new Error("This club application was denied.");
+  }
 
   store.setAuth(data?.session || null, mapClub(clubRow));
   return store.state.activeClub;
@@ -85,12 +101,34 @@ export async function restoreSession() {
 
   const clubRow = await fetchClubByEmail(data.session.user.email).catch(() => null);
   if (!clubRow) return;
+  if (clubRow.status === "denied") {
+    await supabase.auth.signOut().catch(() => {});
+    store.clearAuth();
+    return;
+  }
   store.setAuth(data.session, mapClub(clubRow));
 }
 
 export async function signOutClub() {
   await supabase.auth.signOut();
   store.clearAuth();
+}
+
+export async function requestPasswordReset(email) {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    // Return the user to this app; Supabase appends the recovery token to the
+    // URL hash, which onAuthStateChange picks up as a PASSWORD_RECOVERY event.
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if (error) throw error;
+}
+
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
 }
 
 export async function updateClubProfile(clubId, updates) {

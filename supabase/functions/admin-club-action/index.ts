@@ -13,11 +13,26 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
 
+// Restrict CORS to a known origin when ALLOWED_ORIGIN is configured; fall back
+// to "*" otherwise (the endpoint is still protected by the admin token).
+const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "*";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
+
+// Constant-time string comparison so the admin token check does not leak
+// length/prefix information through response timing.
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 
 const jsonHeaders = {
   ...corsHeaders,
@@ -46,7 +61,7 @@ Deno.serve(async (request) => {
   }
 
   const providedToken = request.headers.get("x-admin-token") || "";
-  if (providedToken.length === 0 || providedToken !== adminSecret) {
+  if (providedToken.length === 0 || !safeEqual(providedToken, adminSecret)) {
     return jsonResponse({ error: "Unauthorized." }, 401);
   }
 
@@ -89,6 +104,12 @@ Deno.serve(async (request) => {
     const { error } = await supabase.from("clubs").update({ status: "approved", denial_reason: null }).eq("id", clubId);
 
     if (error) return jsonResponse({ error: error.message }, 500);
+    // Best-effort audit log; never fail the action if logging fails.
+    try {
+      await supabase.from("admin_actions").insert({ action: "approve", club_id: clubId });
+    } catch (_logError) {
+      /* ignore */
+    }
     return jsonResponse({ ok: true, clubId, status: "approved" }, 200);
   }
 
@@ -104,5 +125,12 @@ Deno.serve(async (request) => {
     .eq("id", clubId);
 
   if (error) return jsonResponse({ error: error.message }, 500);
+  try {
+    await supabase
+      .from("admin_actions")
+      .insert({ action: "reject", club_id: clubId, reason: reason ? String(reason) : null });
+  } catch (_logError) {
+    /* ignore */
+  }
   return jsonResponse({ ok: true, clubId, status: "denied" }, 200);
 });

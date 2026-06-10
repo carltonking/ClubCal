@@ -1075,7 +1075,32 @@
                 </div>
                 <button class="btn btn-primary" type="submit">Sign In</button>
               </form>
-              <p class="helper-row"><a class="helper-link" href="#" data-route="signup">New club? Add it here</a></p>
+              <p class="helper-row">
+                <a class="helper-link" href="#" id="forgot-password-link">Forgot password?</a>
+                <a class="helper-link" href="#" data-route="signup">New club? Add it here</a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-reset-password" class="view" data-view="reset-password">
+          <div class="split-view">
+            <aside class="intro-panel">
+              <div class="flow-tag inverse">Account Recovery</div>
+              <h2>Set a new password.</h2>
+              <p>Choose a new password for your club account. You followed a secure link from your email to get here.</p>
+            </aside>
+            <div class="form-shell">
+              <h2>New password</h2>
+              <p class="muted">Enter a new password to finish resetting your account.</p>
+              <form id="reset-password-form" class="form" novalidate>
+                <div class="field">
+                  <label for="reset-password-input">New Password</label>
+                  <input id="reset-password-input" name="password" type="password" autocomplete="new-password" />
+                  <div class="error" data-error-for="resetPassword"></div>
+                </div>
+                <button class="btn btn-primary" type="submit">Update Password</button>
+              </form>
             </div>
           </div>
         </section>
@@ -1175,6 +1200,23 @@
                         <option value="">— No specific calendar —</option>
                       </select>
                       <div class="error" data-error-for="calendarId"></div>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="event-repeat">Repeats <span class="label-note">(optional)</span></label>
+                        <select id="event-repeat" name="repeat">
+                          <option value="">Does not repeat</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                        <div class="error" data-error-for="repeat"></div>
+                      </div>
+                      <div class="field">
+                        <label for="event-repeat-until">Repeat until <span class="label-note">(optional)</span></label>
+                        <input id="event-repeat-until" name="repeatUntil" type="date" />
+                        <div class="error" data-error-for="repeatUntil"></div>
+                      </div>
                     </div>
                     <div class="field">
                       <label for="event-description"

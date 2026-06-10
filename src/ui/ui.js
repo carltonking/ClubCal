@@ -4,8 +4,7 @@ import {
   fetchDiscoverySchools,
   fetchActiveClubsBySchool,
   deleteEvent,
-  updateEventDownloadCount,
-  fetchEvent
+  updateEventDownloadCount
 } from "../services/eventService.js";
 import { fetchCalendarsForClub } from "../services/calendarService.js";
 import { isSupabaseConfigured } from "../services/supabaseClient.js";
@@ -16,8 +15,8 @@ import {
   categoryClass,
   mapClub,
   mapEvent,
+  parseRRule,
   getClubFeedUrl,
-  getClubFeedWebcalUrl,
   getCalendarFeedUrl,
   getCalendarFeedWebcalUrl,
   toWebcalUrl
@@ -99,6 +98,11 @@ export const UI = {
     Dom.eventForm.querySelector('[name="calendarId"]').value = eventItem.calendar_id || "";
     Dom.eventForm.querySelector('[name="description"]').value = eventItem.description || "";
     Dom.eventForm.querySelector('[name="rsvp"]').value = eventItem.rsvp_url || "";
+    const { repeat, until } = parseRRule(eventItem.recurrence);
+    const repeatField = Dom.eventForm.querySelector('[name="repeat"]');
+    const repeatUntilField = Dom.eventForm.querySelector('[name="repeatUntil"]');
+    if (repeatField) repeatField.value = repeat;
+    if (repeatUntilField) repeatUntilField.value = until;
     if (Dom.eventSubmitBtn) Dom.eventSubmitBtn.textContent = "Update Event";
     if (Dom.cancelEditBtn) Dom.cancelEditBtn.hidden = false;
     this.updatePreview();
@@ -188,6 +192,7 @@ export const UI = {
           <div>
             <h3 class="event-heading">${escapeHTML(eventItem.title)}</h3>
             <div class="badge ${categoryClass(eventItem.category)}">${escapeHTML(eventItem.category)}</div>
+            ${eventItem.recurrence ? `<div class="badge">Repeats ${escapeHTML(parseRRule(eventItem.recurrence).repeat)}</div>` : ""}
             ${eventItem.cancelled ? `<div class="badge stale">Cancelled</div>` : ""}
           </div>
         </div>
@@ -525,8 +530,14 @@ export const UI = {
     });
 
     store.setDiscoveryRows(normalized);
+    this.paintClubGrid();
+  },
 
-    if (!store.state.currentDiscoveryData.length) {
+  // Render the discovery grid from already-fetched state. Called after a fetch
+  // and directly when the category filter changes, so switching chips does not
+  // hit the network again.
+  paintClubGrid() {
+    if (!store.state.currentClubRows.length) {
       Dom.clubGrid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1;">
           <p style="font-size:1.1rem; font-weight:700; color:var(--navy); margin:0 0 8px;">No clubs listed yet at ${escapeHTML(store.state.currentSchool)}.</p>
@@ -544,9 +555,25 @@ export const UI = {
       return;
     }
 
-    Dom.clubGrid.innerHTML = store.state.currentDiscoveryData
-      .map(
-        (club) => `
+    if (!store.state.currentDiscoveryData.length) {
+      Dom.clubGrid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">No clubs match the “${escapeHTML(store.state.currentFilter)}” filter at ${escapeHTML(store.state.currentSchool)}.</div>
+      `;
+      return;
+    }
+
+    // Mirrors the 200-club cap in fetchActiveClubsBySchool: if the result hits
+    // it, surface that the list is truncated instead of silently dropping clubs.
+    const truncatedNote =
+      store.state.currentClubRows.length >= 200
+        ? `<div class="empty-state" style="grid-column:1/-1; color:var(--muted);">Showing the first 200 clubs — search for your school to narrow the list.</div>`
+        : "";
+
+    Dom.clubGrid.innerHTML =
+      truncatedNote +
+      store.state.currentDiscoveryData
+        .map(
+          (club) => `
       <article class="club-card" data-club-id="${club.id}">
         <div class="club-top">
           <div>
@@ -592,8 +619,8 @@ export const UI = {
         </div>
       </article>
     `
-      )
-      .join("");
+        )
+        .join("");
 
     Dom.clubGrid.querySelectorAll(".js-google-subscribe").forEach((button) => {
       button.addEventListener("click", () => {
