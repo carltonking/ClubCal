@@ -9,6 +9,9 @@ export function configureRouter(context) {
   UI = context.UI;
 }
 
+// Views that can be addressed directly via the URL hash (deep-linking).
+const ROUTE_VIEWS = ["landing", "signup", "signin", "reset-password", "dashboard", "discovery", "admin"];
+
 export function showView(name) {
   if (name === "admin" && !UI.ensureAdminAccess()) return;
 
@@ -39,12 +42,37 @@ export function showView(name) {
 
   UI.closeMobileNav();
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Reflect the current view in the URL so links are shareable and a refresh
+  // returns to the same place. replaceState avoids firing a hashchange (no
+  // routing loop) and avoids piling up a history entry on every navigation.
+  const targetHash = name === "landing" ? "" : `#${name}`;
+  if (window.location.hash !== targetHash) {
+    const nextUrl = targetHash || window.location.pathname + window.location.search;
+    window.history.replaceState(null, "", nextUrl);
+  }
 }
 
 export function syncHashRoute() {
-  if (window.location.hash === "#admin") {
-    showView("admin");
-  } else if (store.state.currentView === "admin") {
-    showView("landing");
+  const rawHash = window.location.hash.replace(/^#/, "");
+
+  // Supabase appends auth tokens to the hash (e.g. access_token=...&type=recovery);
+  // those are handled by onAuthStateChange, not by routing.
+  if (rawHash.includes("access_token") || rawHash.includes("type=")) return;
+
+  if (!rawHash) {
+    // Empty hash: only force landing if we were on the gated admin view.
+    if (store.state.currentView === "admin") showView("landing");
+    return;
   }
+
+  if (!ROUTE_VIEWS.includes(rawHash)) return;
+
+  // The dashboard requires an authenticated club; fall back to sign-in.
+  if (rawHash === "dashboard" && !store.state.activeClub) {
+    showView("signin");
+    return;
+  }
+
+  showView(rawHash);
 }

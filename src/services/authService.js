@@ -114,6 +114,23 @@ export async function signOutClub() {
   store.clearAuth();
 }
 
+export async function requestPasswordReset(email) {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    // Return the user to this app; Supabase appends the recovery token to the
+    // URL hash, which onAuthStateChange picks up as a PASSWORD_RECOVERY event.
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if (error) throw error;
+}
+
+export async function updatePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
 export async function updateClubProfile(clubId, updates) {
   const { data, error } = await supabase.from("clubs").update(updates).eq("id", clubId).select().single();
 

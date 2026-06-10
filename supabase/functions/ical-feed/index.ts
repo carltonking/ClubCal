@@ -155,9 +155,12 @@ Deno.serve(async (request) => {
     .eq("id", clubId)
     .single<ClubRow>();
 
-  if (clubError) {
-    return new Response(clubError.message, {
-      status: 500,
+  if (clubError || !club) {
+    // PGRST116 = no rows; treat an unknown club as 404 rather than a 500.
+    const err = clubError as { code?: string; message?: string } | null;
+    const notFound = !club || err?.code === "PGRST116";
+    return new Response(notFound ? "Club not found." : err?.message || "Failed to load club.", {
+      status: notFound ? 404 : 500,
       headers: { ...corsHeaders, "Content-Type": "text/plain; charset=utf-8" }
     });
   }

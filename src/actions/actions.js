@@ -1,4 +1,12 @@
-import { signUpClub, signInClub, signOutClub, updateClubProfile } from "../services/authService.js";
+import {
+  signUpClub,
+  signInClub,
+  signOutClub,
+  updateClubProfile,
+  requestPasswordReset,
+  updatePassword,
+  restoreSession
+} from "../services/authService.js";
 import { createEvent, updateEvent } from "../services/eventService.js";
 import { createCalendar } from "../services/calendarService.js";
 import { clearErrors, setError, buildRRule } from "../utils/helpers.js";
@@ -29,9 +37,56 @@ export const Actions = {
     const authData = await signUpClub(payload, Dom.signupForm);
     if (!authData) return;
 
-    Dom.signupSuccessText.textContent = `Thanks! Your application for ${payload.clubName} has been submitted for review.`;
+    // If the project requires email confirmation, signUp returns a user but no
+    // session — be honest about the extra step instead of implying it's done.
+    const needsEmailConfirm = authData.user && !authData.session;
+    Dom.signupSuccessText.textContent = needsEmailConfirm
+      ? `Thanks! Check your email to confirm your address. Once confirmed, your application for ${payload.clubName} will be reviewed.`
+      : `Thanks! Your application for ${payload.clubName} has been submitted for review.`;
     Dom.signupSuccess.classList.add("visible");
     Dom.signupForm.classList.add("hidden");
+  },
+
+  async handleForgotPassword() {
+    if (!UI.ensureConfigured()) return;
+    clearErrors(Dom.signinForm);
+    const email = String(Dom.signinForm.querySelector('[name="email"]').value || "").trim();
+    if (!email) {
+      setError(Dom.signinForm, "signinEmail", "Enter your email above, then tap “Forgot password”.");
+      return;
+    }
+    try {
+      await requestPasswordReset(email);
+      UI.showToast("Check your email", "If an account exists for that email, a reset link is on its way.");
+    } catch (error) {
+      UI.showToast("Reset failed", error.message);
+    }
+  },
+
+  async handleResetPasswordSubmit(event) {
+    event.preventDefault();
+    clearErrors(Dom.resetPasswordForm);
+    const password = String(Dom.resetPasswordForm.querySelector('[name="password"]').value || "");
+    if (password.length < 6) {
+      setError(Dom.resetPasswordForm, "resetPassword", "Password must be at least 6 characters.");
+      return;
+    }
+    try {
+      await updatePassword(password);
+      Dom.resetPasswordForm.reset();
+      UI.showToast("Password updated", "Your new password is set.");
+      // The recovery session is active; hydrate the club if we can.
+      await restoreSession();
+      UI.syncNavAuthState();
+      if (store.state.activeClub) {
+        await UI.hydrateDashboard();
+        showView("dashboard");
+      } else {
+        showView("signin");
+      }
+    } catch (error) {
+      setError(Dom.resetPasswordForm, "resetPassword", error.message);
+    }
   },
 
   async handleSigninSubmit(event) {
@@ -73,6 +128,12 @@ export const Actions = {
     if (!UI.ensureConfigured()) return;
     if (!store.state.activeClub) {
       UI.showToast("Sign in required", "Please sign in with a club account before creating events.");
+      return;
+    }
+    // Only approved clubs may publish (mirrors the events_insert_own RLS gate);
+    // editing an existing event is still allowed.
+    if (!store.state.editingEventId && store.state.dashboardStatus !== "approved") {
+      UI.showToast("Approval required", "Your club must be approved before you can publish events.");
       return;
     }
 

@@ -29,6 +29,8 @@ const Dom = {
   filterBar: document.getElementById("filter-bar"),
   signupForm: document.getElementById("signup-form"),
   signinForm: document.getElementById("signin-form"),
+  forgotPasswordLink: document.getElementById("forgot-password-link"),
+  resetPasswordForm: document.getElementById("reset-password-form"),
   calendarCreateForm: document.getElementById("calendar-create-form"),
   calendarNameInput: document.getElementById("calendar-name-input"),
   calendarsList: document.getElementById("calendars-list"),
@@ -130,7 +132,7 @@ const App = {
       [...Dom.filterBar.querySelectorAll("[data-filter]")].forEach((chip) =>
         chip.classList.toggle("active", chip === button)
       );
-      UI.renderClubGrid();
+      UI.paintClubGrid();
     });
 
     window.addEventListener("hashchange", () => syncHashRoute());
@@ -144,6 +146,16 @@ const App = {
     Dom.calendarCreateForm.addEventListener("submit", (event) => Actions.handleCalendarCreateSubmit(event));
     Dom.eventForm.addEventListener("input", () => UI.updatePreview());
     Dom.eventForm.addEventListener("change", () => UI.updatePreview());
+
+    if (Dom.forgotPasswordLink) {
+      Dom.forgotPasswordLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        Actions.handleForgotPassword();
+      });
+    }
+    if (Dom.resetPasswordForm) {
+      Dom.resetPasswordForm.addEventListener("submit", (event) => Actions.handleResetPasswordSubmit(event));
+    }
   },
 
   bindSettingsActions() {
@@ -161,6 +173,13 @@ const App = {
     if (!isSupabaseConfigured()) return;
 
     supabase.auth.onAuthStateChange(async (event, session) => {
+      // Password recovery: the user followed the email link and now has a
+      // short-lived session. Send them straight to the set-new-password view.
+      if (event === "PASSWORD_RECOVERY") {
+        showView("reset-password");
+        return;
+      }
+
       if (!session) {
         store.clearAuth();
         UI.syncNavAuthState();
